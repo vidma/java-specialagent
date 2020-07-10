@@ -30,9 +30,14 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <sa.rule.name>play:ws</sa.rule.name>
     <min.version>2.0.0</min.version>
-    <max.version>2.0.5</max.version>
+    <max.version>2.7.5</max.version>
+
+    <!-- fixme: max version check -->
+    <!-- fixme: support multiple scala versions -->
+    <passCompatibility>com.typesafe.play:play-ws_2.12:[${min.version},]</passCompatibility>
     <!-- FIXME: The compatibility of this rule is very unusual, and very restricted. -->
-    <passCompatibility>com.typesafe.play:shaded-asynchttpclient:[${min.version},2.0.5),(2.0.5,2.1.0-M1)</passCompatibility>
+    <!-- FIXME: this check probably mess up 2.13 ? we need both checks -->
+    <!--<passCompatibility>com.typesafe.play:shaded-asynchttpclient:[${min.version},2.0.5),(2.0.5,2.1.0-M1)</passCompatibility>-->
   </properties>
   <dependencies>
     <dependency>
