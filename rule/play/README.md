@@ -6,6 +6,6 @@
 
 ```xml
 <groupId>com.typesafe.play</groupId>
-<artifactId>play_2.12</artifactId>
+<artifactId>play_2.13</artifactId>
 <version>[2.6.0,LATEST]</version>
 ```

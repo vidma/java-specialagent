@@ -36,12 +36,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${version.kafka}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${version.kafka}</version>
       <classifier>test</classifier>
     </dependency>

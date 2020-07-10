@@ -27,7 +27,7 @@
   <name>SpecialAgent Rule for Kafka Streams</name>
   <properties>
     <sa.rule.name>kafka:streams</sa.rule.name>
-    <min.version>1.1.0</min.version>
+    <min.version>2.4.0</min.version>
     <passCompatibility>org.apache.kafka:kafka-streams:[${min.version},]</passCompatibility>
   </properties>
   <dependencies>
@@ -74,14 +74,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${min.version}</version>
       <classifier>test</classifier>
       <optional>true</optional>

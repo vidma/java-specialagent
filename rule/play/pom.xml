@@ -29,34 +29,34 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <sa.rule.name>play</sa.rule.name>
-    <min.version>2.6.0</min.version>
-    <passCompatibility>com.typesafe.play:play_2.12:[${min.version},]</passCompatibility>
+    <min.version>2.7.3</min.version>
+    <passCompatibility>com.typesafe.play:play_2.13:[${min.version},]</passCompatibility>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play_2.12</artifactId>
+      <artifactId>play_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-server_2.12</artifactId>
+      <artifactId>play-server_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-java_2.12</artifactId>
+      <artifactId>play-java_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-akka-http-server_2.12</artifactId>
+      <artifactId>play-akka-http-server_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>test</scope>

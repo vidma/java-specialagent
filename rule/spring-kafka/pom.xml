@@ -29,9 +29,9 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <sa.rule.name>spring:kafka</sa.rule.name>
-    <min.version>2.2.0.RELEASE</min.version>
+    <min.version>2.4.0.RELEASE</min.version>
     <passCompatibility>org.apache.kafka:kafka-clients:[${min.version},]</passCompatibility>
-    <version.kafka>2.0.0</version.kafka>
+    <version.kafka>2.4.0</version.kafka>
   </properties>
   <build>
     <plugins>
@@ -94,14 +94,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${version.kafka}</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.12</artifactId>
+      <artifactId>kafka_2.13</artifactId>
       <version>${version.kafka}</version>
       <classifier>test</classifier>
       <optional>true</optional>

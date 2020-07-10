@@ -6,6 +6,6 @@
 
 ```xml
 <groupId>com.typesafe.akka</groupId>
-<artifactId>akka-actor_2.12</artifactId>
+<artifactId>akka-actor_2.13</artifactId>
 <version>[2.5.0,LATEST]</version>
 ```

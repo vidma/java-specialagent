@@ -31,17 +31,17 @@
   <dependencies>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-http_2.12</artifactId>
+      <artifactId>akka-http_2.13</artifactId>
       <version>10.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-actor_2.12</artifactId>
+      <artifactId>akka-actor_2.13</artifactId>
       <version>${version.akka}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-stream_2.12</artifactId>
+      <artifactId>akka-stream_2.13</artifactId>
       <version>${version.akka}</version>
     </dependency>
   </dependencies>

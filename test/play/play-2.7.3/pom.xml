@@ -31,22 +31,22 @@
   <dependencies>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play_2.12</artifactId>
+      <artifactId>play_2.13</artifactId>
       <version>${version.play}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-server_2.12</artifactId>
+      <artifactId>play-server_2.13</artifactId>
       <version>${version.play}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-java_2.12</artifactId>
+      <artifactId>play-java_2.13</artifactId>
       <version>${version.play}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
-      <artifactId>play-akka-http-server_2.12</artifactId>
+      <artifactId>play-akka-http-server_2.13</artifactId>
       <version>${version.play}</version>
     </dependency>
     <dependency>

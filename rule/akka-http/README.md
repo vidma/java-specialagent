@@ -6,6 +6,6 @@
 
 ```xml
 <groupId>com.typesafe.akka</groupId>
-<artifactId>akka-http_2.12</artifactId>
+<artifactId>akka-http_2.13</artifactId>
 <version>[10.1.0,LATEST]</version>
 ```

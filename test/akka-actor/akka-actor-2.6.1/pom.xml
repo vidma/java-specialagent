@@ -31,7 +31,7 @@
   <dependencies>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-actor_2.12</artifactId>
+      <artifactId>akka-actor_2.13</artifactId>
       <version>${version.akka}</version>
     </dependency>
     <dependency>

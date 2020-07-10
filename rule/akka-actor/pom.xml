@@ -28,9 +28,9 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <min.version>2.5.0</min.version>
+    <min.version>2.5.23</min.version>
     <sa.rule.name>akka:actor</sa.rule.name>
-    <passCompatibility>com.typesafe.akka:akka-actor_2.12:[${min.version},]</passCompatibility>
+    <passCompatibility>com.typesafe.akka:akka-actor_2.13:[${min.version},]</passCompatibility>
   </properties>
   <dependencies>
     <dependency>
@@ -42,7 +42,7 @@
       <exclusions>
         <exclusion>
           <groupId>com.typesafe.akka</groupId>
-          <artifactId>akka-actor_2.12</artifactId>
+          <artifactId>akka-actor_2.13</artifactId>
         </exclusion>
         <exclusion>
           <groupId>io.opentracing</groupId>
@@ -56,7 +56,7 @@
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-actor_2.12</artifactId>
+      <artifactId>akka-actor_2.13</artifactId>
       <version>${min.version}</version>
       <optional>true</optional>
       <scope>provided</scope>
