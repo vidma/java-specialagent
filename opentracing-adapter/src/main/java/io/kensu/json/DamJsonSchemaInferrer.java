@@ -8,15 +8,14 @@ import com.saasquatch.jsonschemainferrer.JsonSchemaInferrer;
 import com.saasquatch.jsonschemainferrer.SpecVersion;
 import io.kensu.collector.model.DamSchemaUtils;
 import io.kensu.dam.model.FieldDef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.kensu.logging.KensuLogger;
 
 import java.util.*;
 
 public class DamJsonSchemaInferrer {
     public static  String DAM_OUTPUT_SCHEMA_TAG =  "http.output_schema";
 
-    private static final Logger logger = LoggerFactory.getLogger(DamJsonSchemaInferrer.class.getName());
+    private static final KensuLogger logger = new KensuLogger(DamJsonSchemaInferrer.class);
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final JsonSchemaInferrer inferrer = JsonSchemaInferrer.newBuilder()
@@ -79,7 +78,7 @@ public class DamJsonSchemaInferrer {
                 if (fieldType.equals("object")) {
                     Set<FieldDef> subfields = convertToDamSchema(childNode);
                     for (FieldDef subfield : subfields) {
-                        damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "." + subfield.getFieldType(), subfield.getFieldType()));
+                        damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "." + subfield.getName(), subfield.getFieldType()));
                     }
                 }
                 if (fieldType.equals("array")) {
@@ -87,11 +86,12 @@ public class DamJsonSchemaInferrer {
                     if (arrayItemsDesc != null) {
                         Set<FieldDef> subfields = convertToDamSchema(arrayItemsDesc);
                         for (FieldDef subfield : subfields) {
-                            damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "[i]." + subfield.getFieldType(), subfield.getFieldType()));
+                            damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "[i]." + subfield.getName(), subfield.getFieldType()));
                         }
                     }
                 }
             }
+        }
         System.err.println("DAM SCHEMA: " + damSchema);
         return damSchema;
     }

@@ -39,7 +39,6 @@ import io.opentracing.mock.MockTracer;
 import io.opentracing.mock.ProxyMockTracer;
 import io.opentracing.util.GlobalTracer;
 import io.opentracing.util.ThreadLocalScopeManager;
-import org.slf4j.LoggerFactory;
 
 public class OpenTracingAdapter extends Adapter {
   private static final Logger logger = Logger.getLogger(OpenTracingAdapter.class);
@@ -225,7 +224,7 @@ public class OpenTracingAdapter extends Adapter {
       Tracer backendTracer = tracer;
       ScopeManager scopeManager = (backendTracer.scopeManager() == null) ? backendTracer.scopeManager() : new ThreadLocalScopeManager();
       // FIXME: use different logger?
-      DamTracerReporter reporter = new DamTracerReporter(org.slf4j.LoggerFactory.getLogger("tracer"), new SimpleSpringtUrlsTransformer());
+      DamTracerReporter reporter = new DamTracerReporter(new SimpleSpringtUrlsTransformer());
       Tracer combinedTracer = new TracerR(backendTracer, reporter, scopeManager);
       tracer = combinedTracer;
 

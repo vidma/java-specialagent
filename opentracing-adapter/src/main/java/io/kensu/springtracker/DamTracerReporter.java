@@ -17,13 +17,13 @@ import io.kensu.dam.model.Process;
 import io.kensu.collector.model.datasource.HttpDatasourceNameFormatter;
 import io.kensu.collector.model.datasource.JdbcDatasourceNameFormatter;
 import io.kensu.json.DamJsonSchemaInferrer;
+import io.kensu.logging.KensuLogger;
 import io.kensu.utils.ConcurrentHashMultimap;
 import io.opentracing.contrib.reporter.Reporter;
 import io.opentracing.contrib.reporter.SpanData;
 import io.opentracing.tag.Tag;
 import io.opentracing.tag.Tags;
 import net.sf.jsqlparser.JSQLParserException;
-import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.*;
@@ -32,14 +32,13 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import static io.kensu.json.DamJsonSchemaInferrer.DAM_OUTPUT_SCHEMA_TAG;
 
 public class DamTracerReporter implements Reporter {
-    private final Logger logger;
+    private final KensuLogger logger = new KensuLogger(DamTracerReporter.class);
     protected final AbstractUrlsTransformer urlsTransformer;
 
     private final ConcurrentHashMultimap<SpanData> spanChildrenCache = new ConcurrentHashMultimap<>();
     private final HttpDatasourceNameFormatter httpFormatter = HttpDatasourceNameFormatter.INST;
 
-    public DamTracerReporter(Logger logger, AbstractUrlsTransformer springUrlsTransformer) {
-        this.logger = logger;
+    public DamTracerReporter(AbstractUrlsTransformer springUrlsTransformer) {
         this.urlsTransformer = springUrlsTransformer;
     }
 
@@ -61,6 +60,9 @@ public class DamTracerReporter implements Reporter {
 
     @Override
     public void finish(Instant timestamp, SpanData span) {
+        String logMessage = createLogMessage(timestamp, "Finish", span);
+        logger.info(logMessage);
+
         try {
             String maybeParentId = span.references.get("child_of");
             if (maybeParentId != null) {
@@ -69,12 +71,6 @@ public class DamTracerReporter implements Reporter {
                 // this is the main SPAN, report all the stuff which was gathered so far
                 DamBatchBuilder batchBuilder = new DamBatchBuilder().withDefaultLocation();
                 PhysicalLocationRef defaultLocationRef = DamBatchBuilder.DEFAULT_LOCATION_REF;
-
-                String logMessage = createLogMessage(timestamp, "Finish", span);
-
-
-                logger.debug(logMessage);
-
                 //   - http.status_code: 200
                 //   - component: java-web-servlet
                 //   - span.kind: server
@@ -199,11 +195,10 @@ public class DamTracerReporter implements Reporter {
                     reportBatchToDam(batchBuilder);
                 }
             }
-        } catch (Exception e){
-            System.err.println(String.format("Caught exception in DamTracerReporter: %s", String.valueOf(e.getMessage())));
-            e.printStackTrace();
-            throw e;
+        } catch (RuntimeException e){
+            logger.warn("Caught exception in DamTracerReporter...", e);
         }
+        // FIXME: catch more...
     }
 
     protected Set<FieldDef> getHttpResponseSchema(SpanData span) {

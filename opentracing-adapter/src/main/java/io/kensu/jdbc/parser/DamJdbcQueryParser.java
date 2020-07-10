@@ -3,6 +3,7 @@ package io.kensu.jdbc.parser;
 import io.kensu.collector.model.DamSchemaUtils;
 import io.kensu.collector.model.datasource.JdbcDatasourceNameFormatter;
 import io.kensu.dam.model.FieldDef;
+import io.kensu.logging.KensuLogger;
 import io.kensu.utils.ConcurrentHashMultimap;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Alias;
@@ -23,7 +24,7 @@ import net.sf.jsqlparser.util.TablesNamesFinder;
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
 import net.sf.jsqlparser.util.deparser.SelectDeParser;
 import net.sf.jsqlparser.util.deparser.StatementDeParser;
-import org.slf4j.Logger;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.function.Function;
 import static io.kensu.utils.ListUtils.orEmptyList;
 
 public class DamJdbcQueryParser {
-    private final Logger logger;
+    private final KensuLogger logger;
 
     String dbInstance;
     String dbType;
@@ -45,7 +46,7 @@ public class DamJdbcQueryParser {
     public DamJdbcQueryParser(String dbInstance,
                               String dbType,
                               String sqlStatement,
-                              Logger logger) throws JSQLParserException {
+                              KensuLogger logger) throws JSQLParserException {
         this.dbInstance = dbInstance;
         this.dbType = dbType;
         this.sqlStatement = sqlStatement;
@@ -241,7 +242,7 @@ public class DamJdbcQueryParser {
         return new ReferencedSchemaFieldsInfo("select", dataFieldsByTable, controlFieldsByTable);
     }
 
-    public static ReferencedSchemaFieldsInfo parseOrUnkownReferenced(String dbInstance, String dbType, String dbStatement, Logger logger, String defaultDbPath, Function<DamJdbcQueryParser, ReferencedSchemaFieldsInfo> fn) {
+    public static ReferencedSchemaFieldsInfo parseOrUnkownReferenced(String dbInstance, String dbType, String dbStatement, KensuLogger logger, String defaultDbPath, Function<DamJdbcQueryParser, ReferencedSchemaFieldsInfo> fn) {
         try {
             DamJdbcQueryParser parser = new DamJdbcQueryParser(dbInstance, dbType, dbStatement, logger);
             return fn.apply(parser);
