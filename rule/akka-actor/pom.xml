@@ -37,6 +37,7 @@
       <!-- https://github.com/opentracing-contrib/java-akka -->
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>opentracing-akka</artifactId>
+      <!-- fixme: this secretly depends on scala 2.12 !!! -->
       <version>0.1.4</version>
       <optional>true</optional>
       <exclusions>

@@ -78,6 +78,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>spring-boot</artifactId>
@@ -99,6 +100,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        -->
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>jdbc</artifactId>
@@ -106,6 +108,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>concurrent</artifactId>
@@ -113,6 +116,8 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        -->
+        <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>httpurlconnection</artifactId>
@@ -393,6 +398,8 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        -->
+        <!-- FIXME!
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>akka-actor</artifactId>
@@ -400,6 +407,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>akka-http</artifactId>
@@ -407,6 +415,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        -->
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>play</artifactId>
@@ -421,6 +430,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>couchbase-client</artifactId>
@@ -498,6 +508,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        -->
       </dependencies>
     </profile>
     <profile>

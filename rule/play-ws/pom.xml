@@ -33,7 +33,6 @@
     <max.version>2.7.5</max.version>
 
     <!-- fixme: max version check -->
-    <!-- fixme: support multiple scala versions -->
     <passCompatibility>com.typesafe.play:play-ws_2.13:[${min.version},]</passCompatibility>
     <!-- FIXME: The compatibility of this rule is very unusual, and very restricted. -->
     <!-- FIXME: this check probably mess up 2.13 ? we need both checks -->
@@ -43,7 +42,7 @@
     <dependency>
       <groupId>com.typesafe.play</groupId>
       <artifactId>shaded-asynchttpclient</artifactId>
-      <version>2.1.2</version>
+      <version>2.0.8</version> <!-- fixme: is this for play 2.7.5? <version>2.1.2</version> -->
       <optional>true</optional>
       <scope>provided</scope>
     </dependency>

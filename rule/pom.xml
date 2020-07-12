@@ -38,6 +38,13 @@
       </activation>
       <modules>
         <module>thread</module>
+        <module>jdbc</module>
+        <module>concurrent</module>
+        <!--<module>akka-actor</module>
+        <module>akka-http</module> -->
+        <module>play</module>
+        <module>play-ws</module>
+        <!--
         <module>spring-boot</module>
         <module>spring-webmvc</module>
         <module>okhttp</module>
@@ -98,6 +105,7 @@
         <module>pulsar-functions</module>
         <module>dynamic</module>
         <module>cxf</module>
+        -->
       </modules>
       <build>
         <resources>
