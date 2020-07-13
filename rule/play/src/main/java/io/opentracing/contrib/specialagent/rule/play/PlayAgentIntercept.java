@@ -24,8 +24,7 @@ import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
-import play.api.mvc.Action;
-import play.api.mvc.Request;
+import play.api.mvc.RequestHeader;
 import play.api.mvc.Result;
 import scala.Function1;
 import scala.concurrent.Future;
@@ -40,7 +39,7 @@ public class PlayAgentIntercept {
       return;
     }
 
-    final Request<?> request = (Request<?>)arg0;
+    final RequestHeader request = (RequestHeader)arg0;
     final Tracer tracer = GlobalTracer.get();
     final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
       .withTag(Tags.COMPONENT, COMPONENT_NAME)
@@ -57,7 +56,7 @@ public class PlayAgentIntercept {
   }
 
   @SuppressWarnings("unchecked")
-  public static void applyEnd(final Object thiz, final Object returned, final Throwable thrown) {
+  public static void applyEnd(final Object thiz, final Object returned, final Throwable thrown, final Object executionContext) {
     final LocalSpanContext context = LocalSpanContext.get(COMPONENT_NAME);
     if (context == null)
       return;
@@ -85,6 +84,6 @@ public class PlayAgentIntercept {
         span.finish();
         return null;
       }
-    }, ((Action<?>)thiz).executionContext());
+    }, (scala.concurrent.ExecutionContext) executionContext);
   }
 }

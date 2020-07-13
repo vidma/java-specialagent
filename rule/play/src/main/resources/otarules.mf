@@ -13,3 +13,4 @@
 # limitations under the License.
 
 io.opentracing.contrib.specialagent.rule.play.PlayAgentRule
+io.opentracing.contrib.specialagent.rule.play.PlayFilterAgentRule

@@ -24,6 +24,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.utility.JavaModule;
+import play.api.mvc.Action;
 
 public class PlayAgentRule extends AgentRule {
   @Override
@@ -46,6 +47,6 @@ public class PlayAgentRule extends AgentRule {
   @Advice.OnMethodExit(onThrowable = Throwable.class)
   public static void exit(final @ClassName String className, final @Advice.Origin String origin, final @Advice.This Object thiz, final @Advice.Return Object returned, final @Advice.Thrown Throwable thrown) {
     if (isAllowed(className, origin))
-      PlayAgentIntercept.applyEnd(thiz, returned, thrown);
+      PlayAgentIntercept.applyEnd(thiz, returned, thrown, ((Action<?>)thiz).executionContext());
   }
 }
