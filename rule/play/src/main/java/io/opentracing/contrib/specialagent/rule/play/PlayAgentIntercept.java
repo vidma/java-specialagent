@@ -19,6 +19,7 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.contrib.specialagent.ConcurrentWeakIdentityHashMap;
 import io.opentracing.contrib.specialagent.LocalSpanContext;
 import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
@@ -31,14 +32,13 @@ import scala.concurrent.Future;
 import scala.util.Try;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayAgentIntercept {
   static final String COMPONENT_NAME = "play";
 
-  // FIXME: old spans are not cleanup now!!!
-  // FIXME: possibly the span can be closed too early now!
-  static final Map<Long, Span> requestIdUsage = new ConcurrentHashMap<>();
+  // FIXME: maybe the span can be closed too early now?
+  static final Map<Long, Span> requestUsages = new ConcurrentWeakIdentityHashMap<>();
+
 
   public static void applyStart(final Object arg0) {
     if (LocalSpanContext.get(COMPONENT_NAME) != null) {
@@ -50,8 +50,8 @@ public class PlayAgentIntercept {
     final Tracer tracer = GlobalTracer.get();
 
     Span span = null;
-    if (requestIdUsage.containsKey(request.id())){
-      span = requestIdUsage.get(request.id());
+    if (requestUsages.containsKey(request.id())){
+      span = requestUsages.get(request.id());
     } else {
       final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
               .withTag(Tags.COMPONENT, COMPONENT_NAME)
@@ -64,7 +64,7 @@ public class PlayAgentIntercept {
         spanBuilder.asChildOf(parent);
 
       span = spanBuilder.start();
-      requestIdUsage.put(request.id(), span);
+      requestUsages.put(request.id(), span);
     }
     LocalSpanContext.set(COMPONENT_NAME, span, tracer.activateSpan(span));
   }
