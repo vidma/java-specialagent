@@ -30,8 +30,15 @@ import scala.Function1;
 import scala.concurrent.Future;
 import scala.util.Try;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class PlayAgentIntercept {
   static final String COMPONENT_NAME = "play";
+
+  // FIXME: old spans are not cleanup now!!!
+  // FIXME: possibly the span can be closed too early now!
+  static final Map<Long, Span> requestIdUsage = new ConcurrentHashMap<>();
 
   public static void applyStart(final Object arg0) {
     if (LocalSpanContext.get(COMPONENT_NAME) != null) {
@@ -41,17 +48,24 @@ public class PlayAgentIntercept {
 
     final RequestHeader request = (RequestHeader)arg0;
     final Tracer tracer = GlobalTracer.get();
-    final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
-      .withTag(Tags.COMPONENT, COMPONENT_NAME)
-      .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER)
-      .withTag(Tags.HTTP_METHOD, request.method())
-      .withTag(Tags.HTTP_URL, (request.secure() ? "https://" : "http://") + request.host() + request.uri());
 
-    final SpanContext parent = tracer.extract(Builtin.HTTP_HEADERS, new HttpHeadersExtractAdapter(request.headers()));
-    if (parent != null)
-      spanBuilder.asChildOf(parent);
+    Span span = null;
+    if (requestIdUsage.containsKey(request.id())){
+      span = requestIdUsage.get(request.id());
+    } else {
+      final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
+              .withTag(Tags.COMPONENT, COMPONENT_NAME)
+              .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER)
+              .withTag(Tags.HTTP_METHOD, request.method())
+              .withTag(Tags.HTTP_URL, (request.secure() ? "https://" : "http://") + request.host() + request.uri());
 
-    final Span span = spanBuilder.start();
+      final SpanContext parent = tracer.extract(Builtin.HTTP_HEADERS, new HttpHeadersExtractAdapter(request.headers()));
+      if (parent != null)
+        spanBuilder.asChildOf(parent);
+
+      span = spanBuilder.start();
+      requestIdUsage.put(request.id(), span);
+    }
     LocalSpanContext.set(COMPONENT_NAME, span, tracer.activateSpan(span));
   }
 
