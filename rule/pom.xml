@@ -44,6 +44,7 @@
         <module>akka-http</module> -->
         <module>play</module>
         <module>play-ws</module>
+        <module>orientdb-3</module>
         <!--
         <module>spring-boot</module>
         <module>spring-webmvc</module>

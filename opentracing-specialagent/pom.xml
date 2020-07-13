@@ -78,6 +78,13 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
+        <dependency>
+          <groupId>io.opentracing.contrib.specialagent.rule</groupId>
+          <artifactId>orientdb-3</artifactId>
+          <version>${project.version}</version>
+          <optional>true</optional>
+          <scope>provided</scope>
+        </dependency>
         <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
