@@ -23,6 +23,7 @@ import io.opentracing.contrib.specialagent.ConcurrentWeakIdentityHashMap;
 import io.opentracing.contrib.specialagent.LocalSpanContext;
 import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
+import io.opentracing.tag.Tag;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import play.api.mvc.RequestHeader;
@@ -35,9 +36,11 @@ import java.util.Map;
 
 public class PlayAgentIntercept {
   static final String COMPONENT_NAME = "play";
+  static final String HTTP_REQUEST_ID = "http.request_id";
 
   // FIXME: maybe the span can be closed too early now?
-  static final Map<Long, Span> requestUsages = new ConcurrentWeakIdentityHashMap<>();
+  static final Map<RequestHeader, Span> requestUsages = new ConcurrentWeakIdentityHashMap<>();
+  static final Map<RequestHeader, Integer> requestUsagesCounts = new ConcurrentWeakIdentityHashMap<>();
 
 
   public static void applyStart(final Object arg0) {
@@ -49,9 +52,13 @@ public class PlayAgentIntercept {
     final RequestHeader request = (RequestHeader)arg0;
     final Tracer tracer = GlobalTracer.get();
 
+    RequestHeader requestId = request; // request.id()
     Span span = null;
-    if (requestUsages.containsKey(request.id())){
-      span = requestUsages.get(request.id());
+    if (requestUsages.containsKey(requestId)){
+      span = requestUsages.get(requestId);
+      // FIXME: maybe baggage items are thread local without special handling...
+      span.setBaggageItem(HTTP_REQUEST_ID, String.valueOf(request.id()));
+      requestUsagesCounts.put(requestId, requestUsagesCounts.getOrDefault(requestId, 0) + 1); // global counter among all threads
     } else {
       final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
               .withTag(Tags.COMPONENT, COMPONENT_NAME)
@@ -64,7 +71,9 @@ public class PlayAgentIntercept {
         spanBuilder.asChildOf(parent);
 
       span = spanBuilder.start();
-      requestUsages.put(request.id(), span);
+      span.setBaggageItem(HTTP_REQUEST_ID, String.valueOf(request.id()));
+      requestUsages.put(requestId, span);
+      requestUsagesCounts.put(requestId, 1);
     }
     LocalSpanContext.set(COMPONENT_NAME, span, tracer.activateSpan(span));
   }
@@ -79,11 +88,29 @@ public class PlayAgentIntercept {
       return;
 
     final Span span = context.getSpan();
-    context.closeScope();
+
+    // check if all filters/processors for this request are done already, if not we should still wait for lasy one
+    // FIXME: no direct access to Request object from here so it's rather ineffocient in case of many requests at the same time...? but we want to keep weakref as well...
+    String requestId = span.getBaggageItem(HTTP_REQUEST_ID);
+    // fixme: what if getBaggageItem returns null?!
+    Integer globalCount = requestUsagesCounts.keySet().stream()
+            .filter(request -> String.valueOf(request.id()).equals(requestId))
+            .map(request -> {
+              Integer newCount = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);
+              return newCount;
+            }).findFirst()
+            .orElse(0);
+
+    // FIXME: maybe we still need this to release memory? but maybe we shouldn't call close scope multiple times if it wasn't thread-local!? seems like scope is thread local and can be closed...
+    // FIXME: context.closeScope();
+
+    if (globalCount != 0)
+      return;
+
 
     if (thrown != null) {
       OpenTracingApiUtil.setErrorTag(span, thrown);
-      span.finish();
+      span.finish(); // not sure if always correct if not fully done yet
       return;
     }
 
