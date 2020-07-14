@@ -40,8 +40,8 @@
         <module>thread</module>
         <module>jdbc</module>
         <module>concurrent</module>
-        <!--<module>akka-actor</module>
-        <module>akka-http</module> -->
+        <!--<module>akka-actor</module> -->
+        <module>akka-http</module>
         <module>play</module>
         <module>play-ws</module>
         <module>orientdb-3</module>

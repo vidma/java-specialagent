@@ -28,7 +28,7 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <min.version>10.1.8</min.version>
+    <min.version>10.1.12</min.version>
     <sa.rule.name>akka:http</sa.rule.name>
   </properties>
   <build>
@@ -133,6 +133,11 @@
     </plugins>
   </build>
   <dependencies>
+    <!--
+    tested with:
+    akka-http 10.1.12 !
+actor 2.5.31
+-->
     <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-http_2.13</artifactId>
@@ -144,14 +149,14 @@
       <!-- It's required to have a 2nd fingerprinted dependency. Any Akka Http application must have both artifacts.-->
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-actor_2.13</artifactId>
-      <version>2.5.23</version>
+      <version>2.5.31</version>
       <optional>true</optional>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-stream_2.13</artifactId>
-      <version>2.5.23</version>
+      <version>2.5.31</version>
       <optional>true</optional>
       <scope>test</scope>
     </dependency>

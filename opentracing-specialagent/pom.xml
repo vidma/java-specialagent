@@ -414,7 +414,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
-
+-->
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>akka-http</artifactId>
@@ -422,7 +422,6 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
-        -->
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>play</artifactId>
