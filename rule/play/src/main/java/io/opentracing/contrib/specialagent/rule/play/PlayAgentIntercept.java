@@ -92,24 +92,27 @@ public class PlayAgentIntercept {
     // check if all filters/processors for this request are done already, if not we should still wait for lasy one
     // FIXME: no direct access to Request object from here so it's rather ineffocient in case of many requests at the same time...? but we want to keep weakref as well...
     final String requestId = span.getBaggageItem(HTTP_REQUEST_ID);
-    final int globalCount;
+    final Integer globalCount;
     if (requestId == null){
       // fixme: what if getBaggageItem returns null?! when?
       globalCount = 0;
       System.out.println("WARNING: unable to retrieve HTTP_REQUEST_ID from span.getBaggageItem");
     } else {
       globalCount = requestUsagesCounts.keySet().stream()
-              .filter(request -> String.valueOf(request.id()).equals(requestId))
+              .filter(request -> {
+                final Long reqID = request.id();
+                return String.valueOf(reqID).equals(requestId);
+              })
               .map(request -> {
                 Integer newValue = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);
-                System.out.println("WARNING: requestUsagesCounts newValue == null");
-                return (int) ((newValue == null) ? 0 : newValue);
+                if (newValue == null) System.out.println("WARNING: requestUsagesCounts newValue == null (probably processing was fully done)");
+                return (newValue == null) ? 0 : newValue;
               }).findFirst()
               .orElseGet(() -> {
                 System.out.println("WARNING: requestUsagesCounts didn't contain requestID == " + requestId);
                 return 0;
               });
-      System.out.println("INFO: retrieved new globalCount=" + globalCount);
+      System.out.println("INFO: retrieved new globalCount=" + ((globalCount == null) ? "null" : globalCount.toString()));
     }
 
     // FIXME: issue is that span is not closed... (or closed too early otherwise in other cases)
