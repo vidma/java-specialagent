@@ -30,7 +30,10 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <min.version>10.1.12</min.version>
     <sa.rule.name>akka:http</sa.rule.name>
+    <!-- improve this later -->
+    <passCompatibility>com.typesafe.akka:akka-http_2.13:[${min.version},]</passCompatibility>
   </properties>
+  <!--
   <build>
     <plugins>
       <plugin>
@@ -132,6 +135,7 @@
       </plugin>
     </plugins>
   </build>
+  -->
   <dependencies>
     <!--
     tested with:
