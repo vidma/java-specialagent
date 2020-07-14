@@ -91,22 +91,34 @@ public class PlayAgentIntercept {
 
     // check if all filters/processors for this request are done already, if not we should still wait for lasy one
     // FIXME: no direct access to Request object from here so it's rather ineffocient in case of many requests at the same time...? but we want to keep weakref as well...
-    String requestId = span.getBaggageItem(HTTP_REQUEST_ID);
-    // fixme: what if getBaggageItem returns null?!
-    Integer globalCount = requestUsagesCounts.keySet().stream()
-            .filter(request -> String.valueOf(request.id()).equals(requestId))
-            .map(request -> {
-              Integer newCount = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);
-              return newCount;
-            }).findFirst()
-            .orElse(0);
+    final String requestId = span.getBaggageItem(HTTP_REQUEST_ID);
+    final int globalCount;
+    if (requestId == null){
+      // fixme: what if getBaggageItem returns null?! when?
+      globalCount = 0;
+      System.out.println("WARNING: unable to retrieve HTTP_REQUEST_ID from span.getBaggageItem");
+    } else {
+      globalCount = requestUsagesCounts.keySet().stream()
+              .filter(request -> String.valueOf(request.id()).equals(requestId))
+              .map(request -> {
+                Integer newValue = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);
+                System.out.println("WARNING: requestUsagesCounts newValue == null");
+                return (int) ((newValue == null) ? 0 : newValue);
+              }).findFirst()
+              .orElseGet(() -> {
+                System.out.println("WARNING: requestUsagesCounts didn't contain requestID == " + requestId);
+                return 0;
+              });
+      System.out.println("INFO: retrieved new globalCount=" + globalCount);
+    }
 
-    // FIXME: maybe we still need this to release memory? but maybe we shouldn't call close scope multiple times if it wasn't thread-local!? seems like scope is thread local and can be closed...
-    // FIXME: context.closeScope();
+    // FIXME: issue is that span is not closed... (or closed too early otherwise in other cases)
 
     if (globalCount != 0)
       return;
 
+    // FIXME: maybe we still need this to release memory? but maybe we shouldn't call close scope multiple times if it wasn't thread-local!? seems like scope is thread local and can be closed...
+    context.closeScope();
 
     if (thrown != null) {
       OpenTracingApiUtil.setErrorTag(span, thrown);
