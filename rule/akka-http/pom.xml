@@ -105,12 +105,12 @@
                     <dependency>
                       <groupId>com.typesafe.akka</groupId>
                       <artifactId>akka-http_2.13</artifactId>
-                      <version>com.typesafe.akka:akka-http_2.13:[10.1.8,]</version>
+                      <version>com.typesafe.akka:akka-http_2.13:[10.1.12,]</version>
                     </dependency>
                     <dependency>
                       <groupId>com.typesafe.akka</groupId>
                       <artifactId>akka-actor_2.13</artifactId>
-                      <version>2.5.23</version>
+                      <version>2.5.31</version>
                     </dependency>
                   </dependencies>
                 </pass>
@@ -119,12 +119,12 @@
                     <dependency>
                       <groupId>com.typesafe.akka</groupId>
                       <artifactId>akka-http_2.13</artifactId>
-                      <version>10.1.8</version>
+                      <version>10.1.12</version>
                     </dependency>
                     <dependency>
                       <groupId>com.typesafe.akka</groupId>
                       <artifactId>akka-actor_2.13</artifactId>
-                      <version>com.typesafe.akka:akka-actor_2.13:[2.5.23,]</version>
+                      <version>com.typesafe.akka:akka-actor_2.13:[2.5.31,]</version>
                     </dependency>
                   </dependencies>
                 </pass>

@@ -16,9 +16,8 @@ package io.opentracing.contrib.specialagent.rule.akka.http;
 
 import static io.opentracing.contrib.specialagent.rule.akka.http.AkkaAgentIntercept.*;
 
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
-import akka.japi.Function;
+import akka.http.scaladsl.model.HttpRequest;
+import akka.http.scaladsl.model.HttpResponse;
 import io.opentracing.References;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -29,15 +28,15 @@ import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
-public class AkkaHttpSyncHandler implements Function<HttpRequest,HttpResponse> {
-  private final Function<HttpRequest,HttpResponse> handler;
+public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResponse> {
+  private final scala.Function1<HttpRequest,HttpResponse> handler;
 
-  public AkkaHttpSyncHandler(final Function<HttpRequest,HttpResponse> handler) {
+  public AkkaHttpSyncHandler(final scala.Function1<HttpRequest,HttpResponse> handler) {
     this.handler = handler;
   }
 
   @Override
-  public HttpResponse apply(final HttpRequest request) throws Exception {
+  public HttpResponse apply(final HttpRequest request) {
     final Span span = buildSpan(request);
     try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
       final HttpResponse response = handler.apply(request);

@@ -26,6 +26,7 @@ import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.implementation.bytecode.assign.Assigner.Typing;
 import net.bytebuddy.utility.JavaModule;
 
+// FIXME: deprecated
 public class AkkaHttpServerAgentRule extends AgentRule {
   @Override
   public AgentBuilder buildAgentChainedGlobal1(final AgentBuilder builder) {

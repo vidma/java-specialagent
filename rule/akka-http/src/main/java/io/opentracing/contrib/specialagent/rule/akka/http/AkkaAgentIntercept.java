@@ -18,8 +18,8 @@ package io.opentracing.contrib.specialagent.rule.akka.http;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
+import akka.http.scaladsl.model.HttpRequest;
+import akka.http.scaladsl.model.HttpResponse;
 import akka.japi.Function;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -87,11 +87,11 @@ public class AkkaAgentIntercept {
 
   @SuppressWarnings("unchecked")
   public static Object bindAndHandleSync(final Object handler) {
-    return new AkkaHttpSyncHandler((Function<HttpRequest,HttpResponse>)handler);
+    return new AkkaHttpSyncHandler((scala.Function1<HttpRequest,HttpResponse>)handler);
   }
 
   @SuppressWarnings("unchecked")
   public static Object bindAndHandleAsync(final Object handler) {
-    return new AkkaHttpAsyncHandler((Function<HttpRequest,CompletableFuture<HttpResponse>>)handler);
+    return new AkkaHttpAsyncHandler((scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>>)handler);
   }
 }

@@ -13,4 +13,4 @@
 # limitations under the License.
 
 io.opentracing.contrib.specialagent.rule.akka.http.AkkaHttpClientAgentRule
-io.opentracing.contrib.specialagent.rule.akka.http.AkkaHttpServerAgentRule
+io.opentracing.contrib.specialagent.rule.akka.http.ScalaAkkaHttpServerAgentRule

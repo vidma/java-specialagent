@@ -18,8 +18,8 @@ import static io.opentracing.contrib.specialagent.rule.akka.http.AkkaHttpSyncHan
 
 import java.util.concurrent.CompletableFuture;
 
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
+import akka.http.scaladsl.model.HttpRequest;
+import akka.http.scaladsl.model.HttpResponse;
 import akka.japi.Function;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -27,18 +27,21 @@ import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
-public class AkkaHttpAsyncHandler implements Function<HttpRequest,CompletableFuture<HttpResponse>> {
-  private final Function<HttpRequest,CompletableFuture<HttpResponse>> handler;
+//import scala.compat.java8.FutureConverters;
+import static scala.compat.java8.FutureConverters.*;
 
-  public AkkaHttpAsyncHandler(final Function<HttpRequest,CompletableFuture<HttpResponse>> handler) {
+public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> {
+  private final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> handler;
+
+  public AkkaHttpAsyncHandler(final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> handler) {
     this.handler = handler;
   }
 
   @Override
-  public CompletableFuture<HttpResponse> apply(final HttpRequest request) throws Exception {
+  public scala.concurrent.Future<HttpResponse> apply(final HttpRequest request) {
     final Span span = buildSpan(request);
     try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
-      return handler.apply(request).thenApply(httpResponse -> {
+      return toScala(toJava(handler.apply(request)).thenApply(httpResponse -> {
         span.setTag(Tags.HTTP_STATUS, httpResponse.status().intValue());
         span.finish();
         return httpResponse;
@@ -46,7 +49,7 @@ public class AkkaHttpAsyncHandler implements Function<HttpRequest,CompletableFut
         OpenTracingApiUtil.setErrorTag(span, throwable);
         span.finish();
         return null;
-      });
+      }));
     }
   }
 }
