@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import akka.http.javadsl.model.HttpHeader;
-import akka.http.javadsl.model.HttpRequest;
+import akka.http.scaladsl.model.HttpRequest;
 import io.opentracing.propagation.TextMap;
 
 public class HttpHeadersExtractAdapter implements TextMap {

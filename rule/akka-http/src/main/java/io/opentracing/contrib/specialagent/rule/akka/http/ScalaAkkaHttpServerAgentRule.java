@@ -85,12 +85,11 @@ public class ScalaAkkaHttpServerAgentRule extends AgentRule {
   @Override
   public AgentBuilder buildAgentChainedGlobal1(final AgentBuilder builder) {
     return builder
-      .type(named("akka.http.scaladsl.Http$"))
+      .type(named("akka.http.scaladsl.HttpExt"))
       .transform(new Transformer() {
         @Override
         public Builder<?> transform(final Builder<?> builder, final TypeDescription typeDescription, final ClassLoader classLoader, final JavaModule module) {
             //   public static void handle(scala.Function1<HttpRequest, Future[HttpResponse]>);
-            // FIXME!
           return builder.visit(advice(typeDescription).to(SyncHandler.class).on(named("bindAndHandleSync").and(takesArgument(0, named("scala.Function1")))));
         }})
       .transform(new Transformer() {

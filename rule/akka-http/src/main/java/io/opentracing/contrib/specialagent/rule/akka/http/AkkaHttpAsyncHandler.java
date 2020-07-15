@@ -40,6 +40,7 @@ public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.c
   @Override
   public scala.concurrent.Future<HttpResponse> apply(final HttpRequest request) {
     final Span span = buildSpan(request);
+    // FIXME: thread switch due to Future maybe looses the context?
     try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
       return toScala(toJava(handler.apply(request)).thenApply(httpResponse -> {
         span.setTag(Tags.HTTP_STATUS, httpResponse.status().intValue());
