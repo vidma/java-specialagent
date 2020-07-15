@@ -52,6 +52,8 @@ public class ExecutorAgentRule extends AgentRule {
     if (!isAllowed(className, origin))
       return;
 
+    System.out.println("Modifying Runnable.execute for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
+
     final Tracer tracer = GlobalTracer.get();
     if (isVerbose(className)) {
       final Span span = tracer

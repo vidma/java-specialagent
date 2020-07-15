@@ -115,7 +115,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
-        <!--
+
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
           <artifactId>concurrent</artifactId>
@@ -123,7 +123,7 @@
           <optional>true</optional>
           <scope>provided</scope>
         </dependency>
-        -->
+
         <!--
         <dependency>
           <groupId>io.opentracing.contrib.specialagent.rule</groupId>
