@@ -64,7 +64,12 @@ public class ExecutorAgentRule extends AgentRule {
       span.finish();
     }
     else if (tracer.activeSpan() != null) {
-      arg = WrapperProxy.wrap(arg, new TracedRunnable(arg, tracer.activeSpan(), false));
+      try {
+        arg = WrapperProxy.wrap(arg, new TracedRunnable(arg, tracer.activeSpan(), false));
+      } catch (java.lang.IllegalArgumentException e) {
+        System.out.println("WARN Unable to wrap Executor.execute (" + e.toString() + ") for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
+        arg = new TracedRunnable(arg, tracer.activeSpan(), false);
+      }
     }
   }
 }
