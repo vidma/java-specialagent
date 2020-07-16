@@ -23,6 +23,7 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.contrib.specialagent.LocalSpanContext;
 import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.tag.Tags;
@@ -39,6 +40,7 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
   public HttpResponse apply(final HttpRequest request) {
     final Span span = buildSpan(request);
     try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
+      activateLocalSpanContext(span, scope);
       final HttpResponse response = handler.apply(request);
       span.setTag(Tags.HTTP_STATUS, response.status().intValue());
       return response;
@@ -49,6 +51,7 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
     }
     finally {
       span.finish();
+      closeLocalSpanContext();
     }
   }
 
@@ -63,5 +66,14 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
       spanBuilder.addReference(References.FOLLOWS_FROM, context);
 
     return spanBuilder.start();
+  }
+
+  protected static void activateLocalSpanContext(Span span, Scope scope) {
+    LocalSpanContext.set(AkkaAgentIntercept.COMPONENT_NAME_SERVER, span, scope);
+  }
+
+  protected static void closeLocalSpanContext() {
+    final LocalSpanContext context = LocalSpanContext.get(AkkaAgentIntercept.COMPONENT_NAME_SERVER);
+    if (context != null) context.closeScope();
   }
 }
