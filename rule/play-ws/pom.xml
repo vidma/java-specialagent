@@ -29,7 +29,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <sa.rule.name>play:ws</sa.rule.name>
-    <min.version>2.7.3</min.version>
+    <min.version>2.7.5</min.version>
     <max.version>2.7.5</max.version>
 
     <!-- fixme: max version check -->

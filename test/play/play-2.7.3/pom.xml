@@ -23,7 +23,7 @@
     <artifactId>play</artifactId>
     <version>1.7.4-SNAPSHOT</version>
   </parent>
-  <artifactId>play-2.7.3</artifactId>
+  <artifactId>play-2.7.5</artifactId>
   <name>SpecialAgent Test for Play 2.7.3</name>
   <properties>
     <version.play>2.7.3</version.play>

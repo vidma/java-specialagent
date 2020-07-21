@@ -102,6 +102,20 @@
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>span-reporter-slf4j</artifactId>
       <version>0.3.0-2-gb3e162c-SNAPSHOT</version>
+      <!--
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+      -->
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.30</version>
     </dependency>
 
     <dependency>
