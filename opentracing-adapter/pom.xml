@@ -18,6 +18,18 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
   <parent>
     <groupId>io.opentracing.contrib.specialagent</groupId>
     <artifactId>specialagent</artifactId>
@@ -26,6 +38,18 @@
   <artifactId>opentracing-adapter</artifactId>
   <name>OpenTracing Adapter for SpecialAgent</name>
   <url>https://github.com/opentracing-contrib/java-specialagent/tree/master/opentracing-adapter</url>
+  <repositories>
+    <!-- for https://github.com/saasquatch/json-schema-inferrer -->
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>kensu</id>
+      <url>https://public.usnek.com/n/repository/maven-snapshots/</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
       <groupId>io.opentracing.contrib.specialagent</groupId>
@@ -52,5 +76,39 @@
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>common</artifactId>
     </dependency>
+
+    <!-- fixme: maybe temporary ? -->
+    <dependency>
+      <groupId>com.github.saasquatch</groupId>
+      <artifactId>json-schema-inferrer</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.kensu.dam</groupId>
+      <!-- fixme jackson ver?! -->
+      <artifactId>kensu-dam-java-client-jackson-2-10-0</artifactId>
+      <version>1.1.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- for zero server use. fixme: but would it work with default plugins? -->
+    <dependency>
+      <groupId>io.opentracing.contrib</groupId>
+      <artifactId>span-reporter</artifactId>
+      <version>0.3.0-2-gb3e162c-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentracing.contrib</groupId>
+      <artifactId>span-reporter-slf4j</artifactId>
+      <version>0.3.0-2-gb3e162c-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.jsqlparser</groupId>
+      <artifactId>jsqlparser</artifactId>
+      <version>3.1</version>
+    </dependency>
+
   </dependencies>
 </project>

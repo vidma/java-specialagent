@@ -29,10 +29,17 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 
+import io.kensu.springtracker.DamTracer;
+import io.kensu.springtracker.DamTracerReporter;
+import io.kensu.springtracker.SimpleSpringtUrlsTransformer;
+import io.opentracing.ScopeManager;
 import io.opentracing.Tracer;
+import io.opentracing.contrib.reporter.TracerR;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.mock.ProxyMockTracer;
 import io.opentracing.util.GlobalTracer;
+import io.opentracing.util.ThreadLocalScopeManager;
+import org.slf4j.LoggerFactory;
 
 public class OpenTracingAdapter extends Adapter {
   private static final Logger logger = Logger.getLogger(OpenTracingAdapter.class);
@@ -213,6 +220,13 @@ public class OpenTracingAdapter extends Adapter {
         logger.warning("Trace exporter was NOT RESOLVED");
         return null;
       }
+
+      // FIXME: allow to disable dam tracer reporter or configure to logger only...
+      Tracer backendTracer = tracer;
+      ScopeManager scopeManager = (backendTracer.scopeManager() == null) ? backendTracer.scopeManager() : new ThreadLocalScopeManager();
+      DamTracerReporter reporter = new DamTracerReporter(org.slf4j.LoggerFactory.getLogger("tracer"), new SimpleSpringtUrlsTransformer());
+      Tracer combinedTracer = new TracerR(backendTracer, reporter, scopeManager);
+      tracer = combinedTracer;
 
       tracer = initRewritableTracer(tracer, isoClassLoader);
       if (!isAgentRunner() && !GlobalTracer.registerIfAbsent(tracer))
