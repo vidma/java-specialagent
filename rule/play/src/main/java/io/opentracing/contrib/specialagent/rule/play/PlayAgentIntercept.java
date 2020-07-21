@@ -49,6 +49,12 @@ public class PlayAgentIntercept {
       return;
     }
 
+    // inherited via thread...
+    Span maybeThreadActiveSpan = GlobalTracer.get().scopeManager().activeSpan();
+    if (maybeThreadActiveSpan != null && maybeThreadActiveSpan.getBaggageItem(HTTP_REQUEST_ID) != null){
+      return;
+    }
+
     final RequestHeader request = (RequestHeader)arg0;
     final Tracer tracer = GlobalTracer.get();
 

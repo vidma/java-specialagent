@@ -32,6 +32,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType.Builder;
 import net.bytebuddy.implementation.bytecode.assign.Assigner.Typing;
+import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 
 public class ScheduledRunnableAgentRule extends AgentRule {
@@ -44,7 +45,8 @@ public class ScheduledRunnableAgentRule extends AgentRule {
   @Override
   public AgentBuilder buildAgentChainedGlobal1(final AgentBuilder builder) {
     return builder
-      .type(not(isInterface()).and(isSubTypeOf(ScheduledExecutorService.class)))
+      .type(not(isInterface()).and(isSubTypeOf(ScheduledExecutorService.class))
+              .and(not(ElementMatchers.<TypeDescription>nameEndsWith("$")))) // do not rewrite objects for Promise/Future
       .transform(transformer);
   }
 

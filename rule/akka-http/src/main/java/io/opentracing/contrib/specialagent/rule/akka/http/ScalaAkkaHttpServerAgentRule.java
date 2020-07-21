@@ -15,8 +15,6 @@
 
 package io.opentracing.contrib.specialagent.rule.akka.http;
 
-import static net.bytebuddy.matcher.ElementMatchers.*;
-
 import io.opentracing.contrib.specialagent.AgentRule;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;

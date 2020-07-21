@@ -33,7 +33,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>play-ws-2.0.0</artifactId>
+      <artifactId>play-ws-2.7.3</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
     </dependency>

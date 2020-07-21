@@ -34,5 +34,6 @@
   <modules>
     <module>akka-http-10.1.0</module>
     <module>akka-http-10.1.10</module>
+    <module>akka-http-10.1.12</module>
   </modules>
 </project>

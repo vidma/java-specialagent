@@ -26,18 +26,18 @@ import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 //import scala.compat.java8.FutureConverters;
-import static scala.compat.java8.FutureConverters.*;
-import java.util.function.*;
 import scala.compat.java8.functionConverterImpls.FromJavaFunction;
 import scala.concurrent.ExecutionContextExecutor;
 
 
 public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> {
-  private final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> handler;
+  private final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> originalRequestHandler;
 
-  public AkkaHttpAsyncHandler(final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> handler) {
-    this.handler = handler;
+  public AkkaHttpAsyncHandler(final scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> originalRequestHandler) {
+    this.originalRequestHandler = originalRequestHandler;
   }
+
+  private final static String COMPONENT_NAME = AkkaAgentIntercept.COMPONENT_NAME_SERVER;
 
   @Override
   public scala.concurrent.Future<HttpResponse> apply(final HttpRequest request) {
@@ -46,7 +46,8 @@ public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.c
           activateLocalSpanContext(span, scope);
           // FIXME: what is right EC here?
           ExecutionContextExecutor ec = scala.concurrent.ExecutionContext.global();
-          return handler.apply(request)
+          return originalRequestHandler
+                  .apply(request)
                   .map(new FromJavaFunction<>(httpResponse -> {
                       span.setTag(Tags.HTTP_STATUS, httpResponse.status().intValue());
                       span.finish();
@@ -59,12 +60,6 @@ public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.c
                       }
                       return tryResponse;
                   }), ec);
-//      } catch (final Exception e) {
-//          span.finish();
-//          throw e;
-      } finally {
-          // fixme do we need ref counting here? what for?
-          closeLocalSpanContext();
       }
   }
 }

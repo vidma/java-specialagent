@@ -39,8 +39,8 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
   @Override
   public HttpResponse apply(final HttpRequest request) {
     final Span span = buildSpan(request);
-    try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
-      activateLocalSpanContext(span, scope);
+    try (final Scope scope = GlobalTracer.get().scopeManager().activate(span, false)) {
+      //activateLocalSpanContext(span, scope);
       final HttpResponse response = handler.apply(request);
       span.setTag(Tags.HTTP_STATUS, response.status().intValue());
       return response;
@@ -51,7 +51,7 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
     }
     finally {
       span.finish();
-      closeLocalSpanContext();
+      //closeLocalSpanContext();
     }
   }
 

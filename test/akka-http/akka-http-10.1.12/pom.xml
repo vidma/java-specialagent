@@ -23,16 +23,16 @@
     <artifactId>akka-http</artifactId>
     <version>1.7.4-SNAPSHOT</version>
   </parent>
-  <artifactId>akka-http-10.1.10</artifactId>
-  <name>SpecialAgent Test for Akka Http 10.1.10</name>
+  <artifactId>akka-http-10.1.12</artifactId>
+  <name>SpecialAgent Test for Akka Http 10.1.12</name>
   <properties>
-    <version.akka>2.5.23</version.akka>
+    <version.akka>2.5.31</version.akka>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-http_2.13</artifactId>
-      <version>10.1.10</version>
+      <version>10.1.12</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
@@ -46,7 +46,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>akka-http-10.1.0</artifactId>
+      <artifactId>akka-http-10.1.12</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
     </dependency>
