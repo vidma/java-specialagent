@@ -6,4 +6,8 @@ public class HttpDatasourceNameFormatter extends DatasourceNameFormatter {
     public String formatLocation(String tableName, String datasourceFormat){
         return String.format("%s :: %s", datasourceFormat, tableName);
     }
+
+    public String formatMethod(String httpMethod){
+        return String.format("HTTP %s", httpMethod);
+    }
 }

@@ -224,6 +224,7 @@ public class OpenTracingAdapter extends Adapter {
       // FIXME: allow to disable dam tracer reporter or configure to logger only...
       Tracer backendTracer = tracer;
       ScopeManager scopeManager = (backendTracer.scopeManager() == null) ? backendTracer.scopeManager() : new ThreadLocalScopeManager();
+      // FIXME: use different logger?
       DamTracerReporter reporter = new DamTracerReporter(org.slf4j.LoggerFactory.getLogger("tracer"), new SimpleSpringtUrlsTransformer());
       Tracer combinedTracer = new TracerR(backendTracer, reporter, scopeManager);
       tracer = combinedTracer;

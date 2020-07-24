@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-io.opentracing.contrib.specialagent.rule.play.PlayAgentRule
+#io.opentracing.contrib.specialagent.rule.play.PlayAgentRule
 io.opentracing.contrib.specialagent.rule.play.PlayFilterAgentRule

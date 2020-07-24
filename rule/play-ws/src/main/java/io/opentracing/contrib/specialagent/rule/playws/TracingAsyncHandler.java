@@ -16,8 +16,11 @@
 package io.opentracing.contrib.specialagent.rule.playws;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import io.kensu.json.DamJsonSchemaInferrer;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
@@ -83,6 +86,15 @@ public class TracingAsyncHandler implements AsyncHandler<Object> {
       span.setTag(Tags.HTTP_STATUS, response.getStatusCode());
 
     try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
+      if (response != null && response.getContentType().contains("json")) {
+        String body = response.getResponseBody(StandardCharsets.UTF_8);
+        System.out.println("Play WS response=" + String.valueOf(body));
+        String jsonSchema = new DamJsonSchemaInferrer().inferSchemaAsJsonString(body);
+        System.out.println("Play WS response schema=" + String.valueOf(jsonSchema));
+        if (jsonSchema != null) {
+          span.setTag(DamJsonSchemaInferrer.DAM_OUTPUT_SCHEMA_TAG, jsonSchema);
+        }
+      }
       return asyncHandler.onCompleted();
     }
     finally {

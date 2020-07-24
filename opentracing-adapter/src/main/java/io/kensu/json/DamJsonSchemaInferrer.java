@@ -1,6 +1,5 @@
 package io.kensu.json;
 
-import io.kensu.springtracker.DamSchemaTag;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 public class DamJsonSchemaInferrer {
-    public static  DamSchemaTag DAM_OUTPUT_SCHEMA_TAG =  new DamSchemaTag("DamOutputSchema");
+    public static  String DAM_OUTPUT_SCHEMA_TAG =  "http.output_schema";
 
     private static final Logger logger = LoggerFactory.getLogger(DamJsonSchemaInferrer.class.getName());
 
@@ -41,18 +40,59 @@ public class DamJsonSchemaInferrer {
         }
     }
 
+    public String inferSchemaAsJsonString(String json) {
+        try {
+            final JsonNode cleanedupOutputJson = customJsonTransformer(mapper.readTree(json));
+            final JsonNode jsonSchema = inferrer.inferForSample(cleanedupOutputJson);
+            return mapper.writeValueAsString(jsonSchema);
+        } catch (JsonProcessingException e) {
+            System.err.println("Error while trying to parse json in inferSchemaAsJsonString" + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Set<FieldDef> convertToDamSchemaFromString(String jsonSchema){
+        try {
+            return convertToDamSchema(mapper.readTree(jsonSchema));
+        } catch (JsonProcessingException e) {
+            System.err.println("Unable to convert json schema for JSON: " + jsonSchema + "; " + e.getMessage());
+            logger.error("Unable to convert json schema for JSON: " + jsonSchema, e);
+        }
+        return DamSchemaUtils.EMPTY_SCHEMA;
+    }
+
     private Set<FieldDef> convertToDamSchema(final JsonNode jsonSchema){
-        final ObjectNode properties = (ObjectNode) (jsonSchema.get("properties"));
+        // FIXME: flatten the nested fields within objects...
         Set<FieldDef> damSchema = new HashSet<>();
+        final ObjectNode properties = (ObjectNode) (jsonSchema.get("properties"));
+        if (properties == null)
+            return damSchema;
         Iterator<Map.Entry<String, JsonNode>> fieldsIterator = properties.fields();
         while (fieldsIterator.hasNext()) {
             Map.Entry<String, JsonNode> entry = fieldsIterator.next();
             String fieldName = entry.getKey();
-            String fieldType = entry.getValue().get("type").asText("unknown");
+            JsonNode childNode = entry.getValue();
+            String fieldType = childNode.get("type").asText("unknown");
             if (!fieldName.startsWith("_links")) {
                 damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName, fieldType));
+                if (fieldType.equals("object")) {
+                    Set<FieldDef> subfields = convertToDamSchema(childNode);
+                    for (FieldDef subfield : subfields) {
+                        damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "." + subfield.getFieldType(), subfield.getFieldType()));
+                    }
+                }
+                if (fieldType.equals("array")) {
+                    JsonNode arrayItemsDesc = childNode.get("items");
+                    if (arrayItemsDesc != null) {
+                        Set<FieldDef> subfields = convertToDamSchema(arrayItemsDesc);
+                        for (FieldDef subfield : subfields) {
+                            damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName + "[i]." + subfield.getFieldType(), subfield.getFieldType()));
+                        }
+                    }
+                }
             }
-        }
+        System.err.println("DAM SCHEMA: " + damSchema);
         return damSchema;
     }
 }

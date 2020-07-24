@@ -14,7 +14,9 @@ public class PlayFilterAgentRule extends AgentRule {
   @Override
   public AgentBuilder buildAgentChainedGlobal1(final AgentBuilder builder) {
     return builder
-            .type(hasSuperType(named("play.api.mvc.Filter")))
+            .type(not(isInterface())
+                    .and(hasSuperType(named("play.api.mvc.Filter")))
+                    .and(not(named("play.filters.gzip.GzipFilter"))))
             // override def apply(nextFilter: RequestHeader => Future[Result])(request: RequestHeader): Future[Result]
             .transform(new AgentBuilder.Transformer() {
               @Override
@@ -35,7 +37,7 @@ public class PlayFilterAgentRule extends AgentRule {
   public static void exit(final @ClassName String className, final @Advice.Origin String origin, final @Advice.This Object thiz, final @Advice.Return Object returned, final @Advice.Thrown Throwable thrown) {
     if (isAllowed(className, origin)) {
       // fixme: not sure that's the best exec context to use, but should do
-      PlayAgentIntercept.applyEnd(thiz, returned, thrown, ((Filter) thiz).mat().executionContext());
+      PlayAgentIntercept.applyEnd(thiz, returned, thrown, ((Filter) thiz).mat());
     }
   }
 }

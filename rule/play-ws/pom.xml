@@ -58,9 +58,18 @@
     <dependency>
       <groupId>com.typesafe.play</groupId>
       <artifactId>play-ahc-ws-standalone_2.13</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.8</version>
       <optional>true</optional>
       <scope>test</scope>
+    </dependency>
+
+    <!-- for schema inference -->
+    <dependency>
+      <groupId>io.opentracing.contrib.specialagent.</groupId>
+      <artifactId>opentracing-adapter</artifactId>
+      <version>${parent.version}</version>
+      <optional>true</optional>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

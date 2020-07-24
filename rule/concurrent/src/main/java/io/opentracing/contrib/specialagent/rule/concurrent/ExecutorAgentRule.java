@@ -54,7 +54,7 @@ public class ExecutorAgentRule extends AgentRule {
     if (!isAllowed(className, origin))
       return;
 
-    System.out.println("Modifying Runnable.execute for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
+    // System.out.println("Modifying Runnable.execute for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
 
     final Tracer tracer = GlobalTracer.get();
     if (isVerbose(className)) {
@@ -69,7 +69,7 @@ public class ExecutorAgentRule extends AgentRule {
       try {
         arg = WrapperProxy.wrap(arg, new TracedRunnable(arg, tracer.activeSpan(), false));
       } catch (java.lang.IllegalArgumentException e) {
-        System.out.println("WARN Unable to wrap Executor.execute (" + e.toString() + ") for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
+        //System.out.println("WARN Unable to wrap Executor.execute (" + e.toString() + ") for agent className=" + className + "; and origin= " + origin + " and Runnable=" + String.valueOf(arg) + " of class name=" + arg.getClass().getName());
         arg = new TracedRunnable(arg, tracer.activeSpan(), false);
       }
     }

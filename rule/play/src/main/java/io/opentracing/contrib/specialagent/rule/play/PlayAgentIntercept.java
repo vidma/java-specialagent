@@ -15,6 +15,9 @@
 
 package io.opentracing.contrib.specialagent.rule.play;
 
+import akka.stream.Materializer;
+import akka.util.ByteString;
+import io.kensu.json.DamJsonSchemaInferrer;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -23,12 +26,16 @@ import io.opentracing.contrib.specialagent.ConcurrentWeakIdentityHashMap;
 import io.opentracing.contrib.specialagent.LocalSpanContext;
 import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
-import io.opentracing.tag.Tag;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import play.api.http.ContentTypes$;
 import play.api.mvc.RequestHeader;
 import play.api.mvc.Result;
+import play.mvc.Http;
+import scala.Function0;
 import scala.Function1;
+import scala.Option;
+import scala.Option$;
 import scala.concurrent.Future;
 import scala.util.Try;
 
@@ -42,6 +49,8 @@ public class PlayAgentIntercept {
   static final Map<RequestHeader, Span> requestUsages = new ConcurrentWeakIdentityHashMap<>();
   static final Map<RequestHeader, Integer> requestUsagesCounts = new ConcurrentWeakIdentityHashMap<>();
 
+
+  static final String jsonContentType =  Http.MimeTypes.JSON; // "application/json";
 
   public static void applyStart(final Object arg0) {
     if (LocalSpanContext.get(COMPONENT_NAME) != null) {
@@ -85,11 +94,14 @@ public class PlayAgentIntercept {
   }
 
   @SuppressWarnings("unchecked")
-  public static void applyEnd(final Object thiz, final Object returned, final Throwable thrown, final Object executionContext) {
+  public static void applyEnd(final Object thiz, final Object returned, final Throwable thrown, final Object matObj) {
     final LocalSpanContext context = LocalSpanContext.get(COMPONENT_NAME);
+    final akka.stream.Materializer mat = (akka.stream.Materializer) matObj;
+
     if (context == null)
       return;
 
+    // FIXME: or simply check if doesn't have a parent.. but then need good thread context inheritance
     if (context.decrementAndGet() != 0)
       return;
 
@@ -138,14 +150,52 @@ public class PlayAgentIntercept {
     ((Future<Result>)returned).onComplete(new Function1<Try<Result>,Object>() {
       @Override
       public Object apply(final Try<Result> response) {
-        if (response.isFailure())
+        if (response.isFailure()) {
           OpenTracingApiUtil.setErrorTag(span, response.failed().get());
-        else
+          span.finish();
+        }
+        else {
           span.setTag(Tags.HTTP_STATUS, response.get().header().status());
+          String contentType = getResponseContentType(response);
+          System.out.println("Play response content type=" + contentType + " filter class: " + thiz.getClass().getName());
+          if (contentType.contains(jsonContentType)){
+            captureHttpResultSchemaAndFinishSpanMat(response.get(), mat, span);
+            return null;
+          } else {
+            span.finish();
+          }
+        }
 
+        return null;
+      }
+    }, mat.executionContext());
+  }
+
+  protected static String getResponseContentType(Try<Result> response) {
+    return response.get().body().contentType().getOrElse(new Function0<String>() {
+            @Override
+            public String apply() {
+              return "";
+            }
+          });
+  }
+
+  protected static void captureHttpResultSchemaAndFinishSpanMat(Result response, Materializer mat, Span span) {
+    System.out.println("Trying to get json schema...");
+    response.body().consumeData(mat).onComplete(new Function1<Try<ByteString>, Object>() {
+      @Override
+      public Object apply(final Try<ByteString> result) {
+        if (result.isSuccess()){
+          String defaultCharset = "UTF-8"; // FIXME !!!!
+          String jsonStr = result.get().decodeString(defaultCharset);
+          String jsonSchema = new DamJsonSchemaInferrer().inferSchemaAsJsonString(jsonStr);
+          if (jsonSchema != null){
+            span.setTag(DamJsonSchemaInferrer.DAM_OUTPUT_SCHEMA_TAG, jsonSchema);
+          }
+        }
         span.finish();
         return null;
       }
-    }, (scala.concurrent.ExecutionContext) executionContext);
+    }, mat.executionContext());
   }
 }
