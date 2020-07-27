@@ -211,7 +211,7 @@ public class DamJdbcQueryParser {
                     @Override
                     public void visit(SelectExpressionItem item) {
                         Expression expr = item.getExpression();
-                        System.out.println("expr:" + expr.getClass().getName());
+                        logger.debug("expr:" + expr.getClass().getName());
                         if (expr instanceof Column){
                             Column column = (Column) expr;
                             Table resolvedColumnTable = resolveColumnTableOrFail(column, referencedTablesList);

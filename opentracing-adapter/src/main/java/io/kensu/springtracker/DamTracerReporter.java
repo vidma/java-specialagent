@@ -47,7 +47,7 @@ public class DamTracerReporter implements Reporter {
     @Override
     public void start(Instant timestamp, SpanData span) {
         String logMessage = createLogMessage(timestamp, "start", span);
-        logger.info(logMessage);
+        logger.debug(logMessage);
     }
 
     protected <T> T getTagOrDefault(String tagKey, SpanData span, T defaultValue) {
@@ -61,7 +61,7 @@ public class DamTracerReporter implements Reporter {
     @Override
     public void finish(Instant timestamp, SpanData span) {
         String logMessage = createLogMessage(timestamp, "Finish", span);
-        logger.info(logMessage);
+        logger.debug(logMessage);
 
         try {
             String maybeParentId = span.references.get("child_of");
@@ -149,7 +149,7 @@ public class DamTracerReporter implements Reporter {
                                 Boolean isWrite = isHttpWrite(callHttpMethod);
                                 Set<FieldDef> httpResponseSchema = getHttpResponseSchema(childSpan);
                                 String lineageTitle = String.format("Remote HTTP %s call to %s", httpMethod, cleanedCallHttpUrl);
-                                System.err.println(String.format("Found play-ws access: %s with response schema: %s", lineageTitle, httpResponseSchema));
+                                logger.info(String.format("Found play-ws access: %s with response schema: %s", lineageTitle, httpResponseSchema));
                                 DamDataCatalogEntry catalogEntry = batchBuilder.addCatalogEntry(
                                         lineageTitle,
                                         httpResponseSchema,
@@ -203,7 +203,7 @@ public class DamTracerReporter implements Reporter {
 
     protected Set<FieldDef> getHttpResponseSchema(SpanData span) {
         String jsonSchemaAsStr = getTagOrDefault(DAM_OUTPUT_SCHEMA_TAG, span, null);
-        System.err.println("got jsonSchemaAsStr=" + String.valueOf(jsonSchemaAsStr));
+        logger.debug("got jsonSchemaAsStr=" + String.valueOf(jsonSchemaAsStr));
         if (jsonSchemaAsStr == null)
             return DamSchemaUtils.EMPTY_SCHEMA;
         return new DamJsonSchemaInferrer().convertToDamSchemaFromString(jsonSchemaAsStr);

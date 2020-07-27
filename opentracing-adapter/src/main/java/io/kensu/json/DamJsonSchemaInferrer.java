@@ -45,8 +45,7 @@ public class DamJsonSchemaInferrer {
             final JsonNode jsonSchema = inferrer.inferForSample(cleanedupOutputJson);
             return mapper.writeValueAsString(jsonSchema);
         } catch (JsonProcessingException e) {
-            System.err.println("Error while trying to parse json in inferSchemaAsJsonString" + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error while trying to parse json in inferSchemaAsJsonString", e);
             return null;
         }
     }
@@ -55,14 +54,12 @@ public class DamJsonSchemaInferrer {
         try {
             return convertToDamSchema(mapper.readTree(jsonSchema));
         } catch (JsonProcessingException e) {
-            System.err.println("Unable to convert json schema for JSON: " + jsonSchema + "; " + e.getMessage());
             logger.error("Unable to convert json schema for JSON: " + jsonSchema, e);
         }
         return DamSchemaUtils.EMPTY_SCHEMA;
     }
 
     private Set<FieldDef> convertToDamSchema(final JsonNode jsonSchema){
-        // FIXME: flatten the nested fields within objects...
         Set<FieldDef> damSchema = new HashSet<>();
         final ObjectNode properties = (ObjectNode) (jsonSchema.get("properties"));
         if (properties == null)
@@ -75,6 +72,7 @@ public class DamJsonSchemaInferrer {
             String fieldType = childNode.get("type").asText("unknown");
             if (!fieldName.startsWith("_links")) {
                 damSchema.add(DamSchemaUtils.fieldWithMissingNullable(fieldName, fieldType));
+                // flatten the nested fields within objects...
                 if (fieldType.equals("object")) {
                     Set<FieldDef> subfields = convertToDamSchema(childNode);
                     for (FieldDef subfield : subfields) {
@@ -92,7 +90,7 @@ public class DamJsonSchemaInferrer {
                 }
             }
         }
-        System.err.println("DAM SCHEMA: " + damSchema);
+        logger.debug("DAM SCHEMA: " + damSchema);
         return damSchema;
     }
 }
