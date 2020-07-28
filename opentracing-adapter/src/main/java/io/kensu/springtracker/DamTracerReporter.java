@@ -108,6 +108,7 @@ public class DamTracerReporter implements Reporter {
                         logger.debug(String.format("CHILDREN (count = %d):", children.size()));
                         children.forEach(childSpan -> {
                             logger.debug(createLogMessage(timestamp, "child", childSpan));
+
                             if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("java-jdbc")) {
                                 String dbInstance = getTagOrDefault(Tags.DB_INSTANCE, childSpan, "");
                                 String dbType = getTagOrDefault(Tags.DB_TYPE, childSpan, "");
@@ -237,6 +238,7 @@ public class DamTracerReporter implements Reporter {
     }
 
     // FIXME: ODB low-level non-SQL java API calls not handled (?)
+    // FIXME: ODB write could also contain ODB reads at the same time...
     protected Boolean isOrientdbWrite(String s) {
         String statement = s.toLowerCase().trim();
         if (statement.contains("insert ") ||
