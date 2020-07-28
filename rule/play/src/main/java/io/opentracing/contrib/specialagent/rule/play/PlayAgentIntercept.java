@@ -73,7 +73,9 @@ public class PlayAgentIntercept {
       span = requestUsages.get(requestId);
       // FIXME: maybe baggage items are thread local without special handling...
       span.setBaggageItem(HTTP_REQUEST_ID, String.valueOf(request.id()));
-      requestUsagesCounts.put(requestId, requestUsagesCounts.getOrDefault(requestId, 0) + 1); // global counter among all threads
+      synchronized (requestUsagesCounts) {
+        requestUsagesCounts.put(requestId, requestUsagesCounts.getOrDefault(requestId, 0) + 1); // global counter among all threads
+      }
     } else {
       final SpanBuilder spanBuilder = tracer.buildSpan(request.method())
               .withTag(Tags.COMPONENT, COMPONENT_NAME)
@@ -102,6 +104,7 @@ public class PlayAgentIntercept {
       return;
 
     // FIXME: or simply check if doesn't have a parent.. but then need good thread context inheritance
+    // fixme: can it get negative in some cases?
     if (context.decrementAndGet() != 0)
       return;
 
@@ -122,9 +125,12 @@ public class PlayAgentIntercept {
                 return String.valueOf(reqID).equals(requestId);
               })
               .map(request -> {
-                Integer newValue = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);
-                if (newValue == null) System.out.println("WARNING: requestUsagesCounts newValue == null (probably processing was fully done)");
-                return (newValue == null) ? 0 : newValue;
+                        synchronized (requestUsagesCounts) {
+                          Integer newValue = requestUsagesCounts.computeIfPresent(request, (key, value) -> value - 1);  // fixme: in concurrent conflict might result in minus large number
+                          if (newValue == null)
+                            System.out.println("WARNING: requestUsagesCounts newValue == null (probably processing was fully done)");
+                          return (newValue == null) ? 0 : newValue;
+                        }
               }).findFirst()
               .orElseGet(() -> {
                 System.out.println("WARNING: requestUsagesCounts didn't contain requestID == " + requestId);
@@ -135,7 +141,7 @@ public class PlayAgentIntercept {
 
     // FIXME: issue is that span is not closed... (or closed too early otherwise in other cases)
 
-    if (globalCount != 0)
+    if (globalCount > 0)
       return;
 
     // FIXME: maybe we still need this to release memory? but maybe we shouldn't call close scope multiple times if it wasn't thread-local!? seems like scope is thread local and can be closed...
