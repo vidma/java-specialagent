@@ -59,6 +59,7 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
     final SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(request.method().value())
       .withTag(Tags.COMPONENT, COMPONENT_NAME_SERVER)
       .withTag(Tags.HTTP_URL, request.getUri().toString())
+      .withTag(Tags.HTTP_METHOD, request.method().value())
       .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER);
 
     final SpanContext context = GlobalTracer.get().extract(Builtin.HTTP_HEADERS, new HttpHeadersExtractAdapter(request));

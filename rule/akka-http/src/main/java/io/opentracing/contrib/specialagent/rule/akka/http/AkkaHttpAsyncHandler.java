@@ -14,20 +14,8 @@
  */
 package io.opentracing.contrib.specialagent.rule.akka.http;
 
-import static io.opentracing.contrib.specialagent.rule.akka.http.AkkaHttpSyncHandler.*;
-
 import akka.http.scaladsl.model.HttpRequest;
 import akka.http.scaladsl.model.HttpResponse;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.contrib.specialagent.LocalSpanContext;
-import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
-
-//import scala.compat.java8.FutureConverters;
-import scala.compat.java8.functionConverterImpls.FromJavaFunction;
-import scala.concurrent.ExecutionContextExecutor;
 
 
 public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> {
@@ -37,29 +25,9 @@ public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.c
     this.originalRequestHandler = originalRequestHandler;
   }
 
-  private final static String COMPONENT_NAME = AkkaAgentIntercept.COMPONENT_NAME_SERVER;
-
   @Override
   public scala.concurrent.Future<HttpResponse> apply(final HttpRequest request) {
-      final Span span = buildSpan(request);
-      try (final Scope scope = GlobalTracer.get().activateSpan(span)) {
-          activateLocalSpanContext(span, scope);
-          // FIXME: what is right EC here?
-          ExecutionContextExecutor ec = scala.concurrent.ExecutionContext.global();
-          return originalRequestHandler
-                  .apply(request)
-                  .map(new FromJavaFunction<>(httpResponse -> {
-                      span.setTag(Tags.HTTP_STATUS, httpResponse.status().intValue());
-                      span.finish();
-                      return httpResponse;
-                  }), ec)
-                  .transform(new FromJavaFunction<>(tryResponse -> {
-                      if (tryResponse.isFailure()) {
-                          OpenTracingApiUtil.setErrorTag(span, tryResponse.failed().get());
-                          span.finish();
-                      }
-                      return tryResponse;
-                  }), ec);
-      }
+      return AbstractAkkaHttpRequestHandler.apply(request, originalRequestHandler.apply(request));
   }
 }
+

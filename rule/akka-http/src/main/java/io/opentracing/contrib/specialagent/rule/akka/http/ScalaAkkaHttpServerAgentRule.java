@@ -94,7 +94,14 @@ public class ScalaAkkaHttpServerAgentRule extends AgentRule {
         @Override
         public Builder<?> transform(final Builder<?> builder, final TypeDescription typeDescription, final ClassLoader classLoader, final JavaModule module) {
           return builder.visit(advice(typeDescription).to(AsyncHandler.class).on(named("bindAndHandleAsync").and(takesArgument(0, named("scala.Function1")))));
-        }});
+        }}) // capture akka-http scala API implicit conversion from Route => Flow
+            .type(named("akka.http.scaladsl.server.Route$"))
+            .transform(new Transformer() {
+                @Override
+                public Builder<?> transform(final Builder<?> builder, final TypeDescription typeDescription, final ClassLoader classLoader, final JavaModule module) {
+                    return builder.visit(advice(typeDescription).to(AsyncFlowHandler.class).on(named("handlerFlow").and(takesArgument(0, named("scala.Function1")))));
+                }
+            });
   }
 
   public static class SyncHandler {
@@ -112,4 +119,12 @@ public class ScalaAkkaHttpServerAgentRule extends AgentRule {
         arg0 = AkkaAgentIntercept.bindAndHandleAsync(arg0);
     }
   }
+
+    public static class AsyncFlowHandler {
+        @Advice.OnMethodEnter
+        public static void enter(final @ClassName String className, final @Advice.Origin String origin, @Advice.Argument(value = 0, readOnly = false, typing = Typing.DYNAMIC) Object arg0) {
+            if (isAllowed(className, origin))
+                arg0 = AkkaAgentIntercept.captureImplicitRoutesToFlowConversion(arg0);
+        }
+    }
 }

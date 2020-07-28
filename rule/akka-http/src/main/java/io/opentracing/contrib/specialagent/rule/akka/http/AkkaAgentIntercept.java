@@ -15,12 +15,10 @@
 
 package io.opentracing.contrib.specialagent.rule.akka.http;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import akka.http.scaladsl.model.HttpRequest;
 import akka.http.scaladsl.model.HttpResponse;
-import akka.japi.Function;
+import akka.http.scaladsl.server.RequestContext;
+import akka.http.scaladsl.server.RouteResult;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.specialagent.LocalSpanContext;
@@ -28,6 +26,10 @@ import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import scala.Function1;
+import scala.concurrent.Future;
+
+import java.util.concurrent.CompletionStage;
 
 public class AkkaAgentIntercept {
   static final String COMPONENT_NAME_CLIENT = "akka-http-client";
@@ -93,5 +95,11 @@ public class AkkaAgentIntercept {
   @SuppressWarnings("unchecked")
   public static Object bindAndHandleAsync(final Object handler) {
     return new AkkaHttpAsyncHandler((scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>>)handler);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static Object captureImplicitRoutesToFlowConversion(final Object handler) {
+    System.out.println(String.format("inside bindAndHandleAsyncWithRequestContext for reqHandler={}", String.valueOf(handler)));
+    return new AkkaHttpAsyncHandlerWithRequestCtx((Function1<RequestContext, Future<RouteResult>>) handler);
   }
 }
