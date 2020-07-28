@@ -229,19 +229,11 @@ public class DamTracerReporter implements Reporter {
     }
 
     protected Boolean isHttpWrite(String callHttpMethod) {
-        Boolean isWrite;
-        switch (callHttpMethod.toUpperCase()) {
-            case "POST":
-            case "PUT":
-            case "DELETE":
-            case "PATCH":
-                isWrite = true;
-                break;
-            default:
-                isWrite = false;
-                break;
-        }
-        return isWrite;
+        String method = callHttpMethod.toUpperCase();
+        return method.equals("POST") ||
+                method.equals("PUT") ||
+                method.equals("DELETE") ||
+                method.equals("PATCH");
     }
 
     // FIXME: ODB low-level non-SQL java API calls not handled (?)
