@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 import static io.kensu.json.DamJsonSchemaInferrer.DAM_OUTPUT_SCHEMA_TAG;
 
@@ -212,7 +213,12 @@ public class DamTracerReporter implements Reporter {
             if (damEnv.isOffline())
                 reportBatchToDam(batchBuilder);
             else {
-                damHttpReportingExecutor.submit(() -> reportBatchToDam(batchBuilder));
+
+                try {
+                    damHttpReportingExecutor.submit(() -> reportBatchToDam(batchBuilder));
+                } catch (RejectedExecutionException e){
+                    logger.error("Unable to enque sending entities to DAM", e);
+                }
             }
         }
     }
