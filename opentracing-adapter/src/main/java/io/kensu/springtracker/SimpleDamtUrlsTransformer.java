@@ -17,8 +17,8 @@ public class SimpleDamtUrlsTransformer extends AbstractUrlsTransformer {
     @Override
     public String transformUrl(String httpMethod, String fullUrl) {
         if (httpMethod != null && fullUrl != null) {
-            String processed = fullUrl
-                    .replace("http://localhost", "https://localhost"); // FIXME: obtain forwarded URL !!!
+            String processed = fullUrl;
+                    //.replace("http://localhost", "https://localhost"); // FIXME: obtain forwarded URL !!!
             for (ReplacementRule pattern: replacementRules){
                 processed =   pattern.pattern.matcher(processed).replaceAll(pattern.replacement);
             }

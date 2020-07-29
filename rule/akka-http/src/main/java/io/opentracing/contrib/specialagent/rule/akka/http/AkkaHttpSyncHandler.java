@@ -18,6 +18,8 @@ import static io.opentracing.contrib.specialagent.rule.akka.http.AkkaAgentInterc
 
 import akka.http.scaladsl.model.HttpRequest;
 import akka.http.scaladsl.model.HttpResponse;
+import akka.http.scaladsl.model.Uri;
+import akka.http.scaladsl.model.headers.Host;
 import io.opentracing.References;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -28,6 +30,7 @@ import io.opentracing.contrib.specialagent.OpenTracingApiUtil;
 import io.opentracing.propagation.Format.Builtin;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
+import scala.Option;
 
 public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResponse> {
   private final scala.Function1<HttpRequest,HttpResponse> handler;
@@ -56,9 +59,10 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
   }
 
   static Span buildSpan(final HttpRequest request) {
+    Uri normalizedUri = getNormalizedUri(request);
     final SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(request.method().value())
       .withTag(Tags.COMPONENT, COMPONENT_NAME_SERVER)
-      .withTag(Tags.HTTP_URL, request.getUri().toString())
+      .withTag(Tags.HTTP_URL, normalizedUri.toString())
       .withTag(Tags.HTTP_METHOD, request.method().value())
       .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER);
 
@@ -67,6 +71,24 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
       spanBuilder.addReference(References.FOLLOWS_FROM, context);
 
     return spanBuilder.start();
+  }
+
+  protected static Uri getNormalizedUri(HttpRequest request) {
+    // for example nginx sets
+    // proxy_set_header   X-Forwarded-Proto https;
+    // proxy_set_header   X-Forwarded-Scheme https;
+    Option<String> forwardedScheme = request.headers()
+            .find(h -> h.lowercaseName().equals("x-forwarded-scheme") || h.lowercaseName().equals("x-forwarded-proto"))
+            .map(h -> h.value());
+    Boolean securedConnection = request.getUri().getScheme().equals("https") || forwardedScheme.getOrElse(() -> false);
+    //Uri normalizedUri = request.getUri().scheme("aa")
+    // this handles the host header
+    Uri normalizedUri = request
+            .effectiveUri(securedConnection, Host.empty());
+    if (forwardedScheme.nonEmpty()){
+      normalizedUri = normalizedUri.withScheme(forwardedScheme.get());
+    }
+    return normalizedUri;
   }
 
   protected static void activateLocalSpanContext(Span span, Scope scope) {
