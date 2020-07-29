@@ -16,6 +16,9 @@ package io.opentracing.contrib.specialagent.rule.akka.http;
 
 import akka.http.scaladsl.model.HttpRequest;
 import akka.http.scaladsl.model.HttpResponse;
+import scala.concurrent.Future;
+
+import java.util.function.Supplier;
 
 
 public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.concurrent.Future<HttpResponse>> {
@@ -27,7 +30,12 @@ public class AkkaHttpAsyncHandler implements scala.Function1<HttpRequest,scala.c
 
   @Override
   public scala.concurrent.Future<HttpResponse> apply(final HttpRequest request) {
-      return AbstractAkkaHttpRequestHandler.apply(request, originalRequestHandler.apply(request));
+    Supplier<Future<HttpResponse>> httpResponseFuture1 = () -> originalRequestHandler.apply(request);
+
+    return new AbstractAkkaHttpRequestHandler().apply(
+            request,
+            () -> originalRequestHandler.apply(request),
+            r -> r);
   }
 }
 

@@ -12,6 +12,9 @@ import scala.compat.java8.functionConverterImpls.FromJavaFunction;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.Future;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class AkkaHttpAsyncHandlerWithRequestCtx implements scala.Function1<RequestContext,scala.concurrent.Future<RouteResult>> {
     private final scala.Function1<RequestContext,scala.concurrent.Future<RouteResult>> originalRequestHandler;
 
@@ -22,17 +25,12 @@ public class AkkaHttpAsyncHandlerWithRequestCtx implements scala.Function1<Reque
     @Override
     public scala.concurrent.Future<RouteResult> apply(final RequestContext requestContext) {
         HttpRequest request = requestContext.request();
-        // FIXME: nasty code... change/refactor how span helpers works...
-        Future<RouteResult> originalRouteResult = originalRequestHandler.apply(requestContext);
-        ExecutionContextExecutor ec = scala.concurrent.ExecutionContext.global();
-        Future<HttpResponse> httpRespFuture = originalRouteResult.map(new FromJavaFunction<>(routeResult -> {
+        Supplier<Future<RouteResult>> originalRouteResultFn = () -> originalRequestHandler.apply(requestContext);
+        Function<RouteResult, HttpResponse> getHttpResponseFromOrigResultFn = routeResult -> {
             if (routeResult instanceof Complete) {
                 return ((Complete) routeResult).getResponse();
             } else return null;
-        }), ec);
-        return AbstractAkkaHttpRequestHandler.apply(request, httpRespFuture)
-                .flatMap(new FromJavaFunction<>(routeResult -> {
-                    return originalRouteResult;
-                }), ec);
+        };
+        return new AbstractAkkaHttpRequestHandler().apply(request, originalRouteResultFn, getHttpResponseFromOrigResultFn);
     }
 }
