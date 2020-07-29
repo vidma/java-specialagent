@@ -23,7 +23,6 @@ import io.opentracing.contrib.reporter.Reporter;
 import io.opentracing.contrib.reporter.SpanData;
 import io.opentracing.tag.Tag;
 import io.opentracing.tag.Tags;
-import net.sf.jsqlparser.JSQLParserException;
 
 import java.time.Instant;
 import java.util.*;
@@ -146,7 +145,7 @@ public class DamTracerReporter implements Reporter {
                                     getTagOrDefault(Tags.SPAN_KIND, childSpan, "").equals(Tags.SPAN_KIND_CLIENT)) {
                                 String callHttpMethod = getTagOrDefault(Tags.HTTP_METHOD, childSpan, "");
                                 String callHttpUrl = getTagOrDefault(Tags.HTTP_URL, childSpan, "");
-                                String cleanedCallHttpUrl = new SimpleSpringtUrlsTransformer().transformUrl(callHttpMethod, callHttpUrl);
+                                String cleanedCallHttpUrl = new SimpleDamtUrlsTransformer().transformUrl(callHttpMethod, callHttpUrl);
                                 Boolean isWrite = isHttpWrite(callHttpMethod);
                                 Set<FieldDef> httpResponseSchema = getHttpResponseSchema(childSpan);
                                 String lineageTitle = String.format("Remote HTTP %s call to %s", httpMethod, cleanedCallHttpUrl);

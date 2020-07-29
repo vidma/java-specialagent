@@ -29,9 +29,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 
-import io.kensu.springtracker.DamTracer;
 import io.kensu.springtracker.DamTracerReporter;
-import io.kensu.springtracker.SimpleSpringtUrlsTransformer;
+import io.kensu.springtracker.SimpleDamtUrlsTransformer;
 import io.opentracing.ScopeManager;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.reporter.TracerR;
@@ -224,7 +223,7 @@ public class OpenTracingAdapter extends Adapter {
       Tracer backendTracer = tracer;
       ScopeManager scopeManager = (backendTracer.scopeManager() == null) ? backendTracer.scopeManager() : new ThreadLocalScopeManager();
       // FIXME: use different logger?
-      DamTracerReporter reporter = new DamTracerReporter(new SimpleSpringtUrlsTransformer());
+      DamTracerReporter reporter = new DamTracerReporter(new SimpleDamtUrlsTransformer());
       Tracer combinedTracer = new TracerR(backendTracer, reporter, scopeManager);
       tracer = combinedTracer;
 
