@@ -27,6 +27,8 @@ import io.opentracing.tag.Tags;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static io.kensu.json.DamJsonSchemaInferrer.DAM_OUTPUT_SCHEMA_TAG;
 
@@ -36,6 +38,8 @@ public class DamTracerReporter implements Reporter {
 
     private final ConcurrentHashMultimap<SpanData> spanChildrenCache = new ConcurrentHashMultimap<>();
     private final HttpDatasourceNameFormatter httpFormatter = HttpDatasourceNameFormatter.INST;
+
+    private final ExecutorService damHttpReportingExecutor = Executors.newSingleThreadExecutor();
 
     public DamTracerReporter(AbstractUrlsTransformer springUrlsTransformer) {
         this.urlsTransformer = springUrlsTransformer;
@@ -62,143 +66,155 @@ public class DamTracerReporter implements Reporter {
         String logMessage = createLogMessage(timestamp, "Finish", span);
         logger.debug(logMessage);
 
+        handleSpanFinish(timestamp, span);
+    }
+
+    protected void handleSpanFinish(Instant timestamp, SpanData span) {
         try {
             String maybeParentId = span.references.get("child_of");
             if (maybeParentId != null) {
                 spanChildrenCache.addEntry(maybeParentId, span);
             } else {
-                // this is the main SPAN, report all the stuff which was gathered so far
-                DamBatchBuilder batchBuilder = new DamBatchBuilder().withDefaultLocation();
-                PhysicalLocationRef defaultLocationRef = DamBatchBuilder.DEFAULT_LOCATION_REF;
-                //   - http.status_code: 200
-                //   - component: java-web-servlet
-                //   - span.kind: server
-                //   - http.url: http://localhost/people/search/findByLastName
-                //   - http.method: GET
-                //   - DamOutputSchema: [class FieldDef {
-                Integer httpStatus = getTagOrDefault(Tags.HTTP_STATUS, span, 0);
-                // FIMXE: need ability to remove param value to get URL pattern!!!
-                String httpUrl = getTagOrDefault(Tags.HTTP_URL, span, null);
-                String httpMethod = getTagOrDefault(Tags.HTTP_METHOD, span, null);
-                String transformedHttpUrl = urlsTransformer.transformUrl(httpMethod, httpUrl);
-                String spanKind = getTagOrDefault(Tags.SPAN_KIND, span, null);
-                logger.warn(String.format("transformedHttpUrl: %s ( httpStatus: %d\nhttpUrl: %s\nhttpMethod: %s )", transformedHttpUrl, httpStatus, httpUrl, httpMethod));
-                if ((httpStatus >= 200) &&
-                        (httpStatus < 300) &&
-                        transformedHttpUrl != null &&
-                        httpMethod != null &&
-                        spanKind.equals(Tags.SPAN_KIND_SERVER)) {
-                    Set<FieldDef> damOutputFields = getHttpResponseSchema(span);
-                    String endpointName = httpFormatter.formatMethod(httpMethod);
-                    DamDataCatalogEntry outputCatalogEntry = batchBuilder.addCatalogEntry(
-                            "create",
-                            damOutputFields,
-                            transformedHttpUrl,
-                            endpointName,
-                            defaultLocationRef,
-                            HttpDatasourceNameFormatter.INST
-                    );
-                    logger.warn("outputCatalogEntry: " + outputCatalogEntry);
-
-                    List<DamDataCatalogEntry> inputCatalogEntries = new ArrayList<>();
-                    List<DamDataCatalogEntry> writesCatalogEntries = new ArrayList<>();
-                    Set<SpanData> children = getRecursiveSpanChildren(span);
-                    if (children != null) {
-                        logger.debug(String.format("CHILDREN (count = %d):", children.size()));
-                        children.forEach(childSpan -> {
-                            logger.debug(createLogMessage(timestamp, "child", childSpan));
-
-                            if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("java-jdbc")) {
-                                String dbInstance = getTagOrDefault(Tags.DB_INSTANCE, childSpan, "");
-                                String dbType = getTagOrDefault(Tags.DB_TYPE, childSpan, "");
-                                String dbStatement = getTagOrDefault(Tags.DB_STATEMENT, childSpan, "").toLowerCase();
-                                String defaultDbPath = dbInstance; // FIXME: maybe need better handling
-                                // SQL reads
-                                ReferencedSchemaFieldsInfo readFieldsByTable = DamJdbcQueryParser.parseOrUnkownReferenced(dbInstance, dbType, dbStatement, logger, defaultDbPath, DamJdbcQueryParser::guessReferencedInputTableSchemas);
-                                inputCatalogEntries.addAll(batchBuilder.addCatalogEntries("create", readFieldsByTable.schema, dbType, defaultLocationRef, JdbcDatasourceNameFormatter.INST));
-
-                                // SQL writes
-                                ReferencedSchemaFieldsInfo writtenFieldsByTable = DamJdbcQueryParser.parseOrUnkownReferenced(dbInstance, dbType, dbStatement, logger, defaultDbPath, DamJdbcQueryParser::guessReferencedOutputTableSchemas);
-                                writesCatalogEntries.addAll(batchBuilder.addCatalogEntries(writtenFieldsByTable.lineageOperation, writtenFieldsByTable.schema, dbType, defaultLocationRef, JdbcDatasourceNameFormatter.INST));
-                            }
-
-                            // FIXME: maybe determine ODB Vertex/Edge class name as well?
-                            //  maybe special partitioning attributes too? but complicated when all are accessed...
-                            if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("orientdb")) {
-                                String odbStatement = getTagOrDefault(Tags.DB_STATEMENT, childSpan, "");
-                                String odbUrl = getTagOrDefault(Tags.DB_INSTANCE, childSpan, "");
-                                Boolean isWrite = isOrientdbWrite(odbStatement);
-                                List<DamDataCatalogEntry> catalogEntries = batchBuilder.addCatalogEntries(
-                                        String.format("OrientDB %s", isWrite ? "write" : "read"),
-                                        DamSchemaUtils.fieldsWithMissingInfoForPath(String.format("OrientDB :: %s", odbUrl)),
-                                        "orientdb",
-                                        defaultLocationRef,
-                                        OrientdbDatasourceNameFormatter.INST);
-                                if (isWrite) {
-                                    writesCatalogEntries.addAll(catalogEntries);
-                                } else {
-                                    inputCatalogEntries.addAll(catalogEntries);
-                                }
-                            }
-
-                            if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("play-ws") &&
-                                    getTagOrDefault(Tags.SPAN_KIND, childSpan, "").equals(Tags.SPAN_KIND_CLIENT)) {
-                                String callHttpMethod = getTagOrDefault(Tags.HTTP_METHOD, childSpan, "");
-                                String callHttpUrl = getTagOrDefault(Tags.HTTP_URL, childSpan, "");
-                                String cleanedCallHttpUrl = new SimpleDamtUrlsTransformer().transformUrl(callHttpMethod, callHttpUrl);
-                                Boolean isWrite = isHttpWrite(callHttpMethod);
-                                Set<FieldDef> httpResponseSchema = getHttpResponseSchema(childSpan);
-                                String lineageTitle = String.format("Remote HTTP %s call to %s", httpMethod, cleanedCallHttpUrl);
-                                logger.info(String.format("Found play-ws access: %s with response schema: %s", lineageTitle, httpResponseSchema));
-                                DamDataCatalogEntry catalogEntry = batchBuilder.addCatalogEntry(
-                                        lineageTitle,
-                                        httpResponseSchema,
-                                        cleanedCallHttpUrl,
-                                        httpFormatter.formatMethod(callHttpMethod),
-                                        defaultLocationRef,
-                                        HttpDatasourceNameFormatter.INST);
-                                if (isWrite) {
-                                    writesCatalogEntries.add(catalogEntry);
-                                } else {
-                                    inputCatalogEntries.add(catalogEntry);
-                                }
-                            }
-
-                        });
-                    }
-                    // Add all-to-all lineage between all inputs and the HTTP output
-                    logger.warn("inputCatalogEntries: " + inputCatalogEntries);
-                    Process process = damEnv.enqueProcess(batchBuilder);
-                    ProcessRun processRun = damEnv.enqueProcessRun(process, endpointName, batchBuilder);
-                    String inputToHttpOutputOp = "APPEND";
-                    new SimpleDamLineageBuilder(
-                            process,
-                            processRun,
-                            inputCatalogEntries,
-                            outputCatalogEntry,
-                            inputToHttpOutputOp,
-                            "create"
-                    ).addToBatch(batchBuilder);
-                    // each write will need a different lineage as operation logic may be different
-                    logger.warn("writesCatalogEntries: " + writesCatalogEntries);
-                    String inputToJdbcWriteOp = "APPEND";
-                    writesCatalogEntries.forEach(jdbcWriteOutput -> {
-                        new SimpleDamLineageBuilder(
-                                process,
-                                processRun,
-                                Collections.singletonList(outputCatalogEntry),
-                                jdbcWriteOutput,
-                                inputToJdbcWriteOp,
-                                jdbcWriteOutput.lineageTitlePrefix
-                        ).addToBatch(batchBuilder);
-                    });
-                    reportBatchToDam(batchBuilder);
-                }
+                maybeReportToDam(timestamp, span);
             }
         } catch (RuntimeException e){
             logger.warn("Caught exception in DamTracerReporter...", e);
         }
         // FIXME: catch more...
+    }
+
+    private void maybeReportToDam(Instant timestamp, SpanData span) {
+        // this is the main SPAN, report all the stuff which was gathered so far
+        DamBatchBuilder batchBuilder = new DamBatchBuilder().withDefaultLocation();
+        PhysicalLocationRef defaultLocationRef = DamBatchBuilder.DEFAULT_LOCATION_REF;
+        //   - http.status_code: 200
+        //   - component: java-web-servlet
+        //   - span.kind: server
+        //   - http.url: http://localhost/people/search/findByLastName
+        //   - http.method: GET
+        //   - DamOutputSchema: [class FieldDef {
+        Integer httpStatus = getTagOrDefault(Tags.HTTP_STATUS, span, 0);
+        // FIMXE: need ability to remove param value to get URL pattern!!!
+        String httpUrl = getTagOrDefault(Tags.HTTP_URL, span, null);
+        String httpMethod = getTagOrDefault(Tags.HTTP_METHOD, span, null);
+        String transformedHttpUrl = urlsTransformer.transformUrl(httpMethod, httpUrl);
+        String spanKind = getTagOrDefault(Tags.SPAN_KIND, span, null);
+        logger.warn(String.format("transformedHttpUrl: %s ( httpStatus: %d\nhttpUrl: %s\nhttpMethod: %s )", transformedHttpUrl, httpStatus, httpUrl, httpMethod));
+        if ((httpStatus >= 200) &&
+                (httpStatus < 300) &&
+                transformedHttpUrl != null &&
+                httpMethod != null &&
+                spanKind.equals(Tags.SPAN_KIND_SERVER)) {
+            Set<FieldDef> damOutputFields = getHttpResponseSchema(span);
+            String endpointName = httpFormatter.formatMethod(httpMethod);
+            DamDataCatalogEntry outputCatalogEntry = batchBuilder.addCatalogEntry(
+                    "create",
+                    damOutputFields,
+                    transformedHttpUrl,
+                    endpointName,
+                    defaultLocationRef,
+                    HttpDatasourceNameFormatter.INST
+            );
+            logger.warn("outputCatalogEntry: " + outputCatalogEntry);
+
+            List<DamDataCatalogEntry> inputCatalogEntries = new ArrayList<>();
+            List<DamDataCatalogEntry> writesCatalogEntries = new ArrayList<>();
+            Set<SpanData> children = getRecursiveSpanChildren(span);
+            if (children != null) {
+                logger.debug(String.format("CHILDREN (count = %d):", children.size()));
+                children.forEach(childSpan -> {
+                    logger.debug(createLogMessage(timestamp, "child", childSpan));
+
+                    if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("java-jdbc")) {
+                        String dbInstance = getTagOrDefault(Tags.DB_INSTANCE, childSpan, "");
+                        String dbType = getTagOrDefault(Tags.DB_TYPE, childSpan, "");
+                        String dbStatement = getTagOrDefault(Tags.DB_STATEMENT, childSpan, "").toLowerCase();
+                        String defaultDbPath = dbInstance; // FIXME: maybe need better handling
+                        // SQL reads
+                        ReferencedSchemaFieldsInfo readFieldsByTable = DamJdbcQueryParser.parseOrUnkownReferenced(dbInstance, dbType, dbStatement, logger, defaultDbPath, DamJdbcQueryParser::guessReferencedInputTableSchemas);
+                        inputCatalogEntries.addAll(batchBuilder.addCatalogEntries("create", readFieldsByTable.schema, dbType, defaultLocationRef, JdbcDatasourceNameFormatter.INST));
+
+                        // SQL writes
+                        ReferencedSchemaFieldsInfo writtenFieldsByTable = DamJdbcQueryParser.parseOrUnkownReferenced(dbInstance, dbType, dbStatement, logger, defaultDbPath, DamJdbcQueryParser::guessReferencedOutputTableSchemas);
+                        writesCatalogEntries.addAll(batchBuilder.addCatalogEntries(writtenFieldsByTable.lineageOperation, writtenFieldsByTable.schema, dbType, defaultLocationRef, JdbcDatasourceNameFormatter.INST));
+                    }
+
+                    // FIXME: maybe determine ODB Vertex/Edge class name as well?
+                    //  maybe special partitioning attributes too? but complicated when all are accessed...
+                    if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("orientdb")) {
+                        String odbStatement = getTagOrDefault(Tags.DB_STATEMENT, childSpan, "");
+                        String odbUrl = getTagOrDefault(Tags.DB_INSTANCE, childSpan, "");
+                        Boolean isWrite = isOrientdbWrite(odbStatement);
+                        List<DamDataCatalogEntry> catalogEntries = batchBuilder.addCatalogEntries(
+                                String.format("OrientDB %s", isWrite ? "write" : "read"),
+                                DamSchemaUtils.fieldsWithMissingInfoForPath(String.format("OrientDB :: %s", odbUrl)),
+                                "orientdb",
+                                defaultLocationRef,
+                                OrientdbDatasourceNameFormatter.INST);
+                        if (isWrite) {
+                            writesCatalogEntries.addAll(catalogEntries);
+                        } else {
+                            inputCatalogEntries.addAll(catalogEntries);
+                        }
+                    }
+
+                    if (getTagOrDefault(Tags.COMPONENT, childSpan, "").equals("play-ws") &&
+                            getTagOrDefault(Tags.SPAN_KIND, childSpan, "").equals(Tags.SPAN_KIND_CLIENT)) {
+                        String callHttpMethod = getTagOrDefault(Tags.HTTP_METHOD, childSpan, "");
+                        String callHttpUrl = getTagOrDefault(Tags.HTTP_URL, childSpan, "");
+                        String cleanedCallHttpUrl = new SimpleDamtUrlsTransformer().transformUrl(callHttpMethod, callHttpUrl);
+                        Boolean isWrite = isHttpWrite(callHttpMethod);
+                        Set<FieldDef> httpResponseSchema = getHttpResponseSchema(childSpan);
+                        String lineageTitle = String.format("Remote HTTP %s call to %s", httpMethod, cleanedCallHttpUrl);
+                        logger.info(String.format("Found play-ws access: %s with response schema: %s", lineageTitle, httpResponseSchema));
+                        DamDataCatalogEntry catalogEntry = batchBuilder.addCatalogEntry(
+                                lineageTitle,
+                                httpResponseSchema,
+                                cleanedCallHttpUrl,
+                                httpFormatter.formatMethod(callHttpMethod),
+                                defaultLocationRef,
+                                HttpDatasourceNameFormatter.INST);
+                        if (isWrite) {
+                            writesCatalogEntries.add(catalogEntry);
+                        } else {
+                            inputCatalogEntries.add(catalogEntry);
+                        }
+                    }
+
+                });
+            }
+            // Add all-to-all lineage between all inputs and the HTTP output
+            logger.warn("inputCatalogEntries: " + inputCatalogEntries);
+            Process process = damEnv.enqueProcess(batchBuilder);
+            ProcessRun processRun = damEnv.enqueProcessRun(process, endpointName, batchBuilder);
+            String inputToHttpOutputOp = "APPEND";
+            new SimpleDamLineageBuilder(
+                    process,
+                    processRun,
+                    inputCatalogEntries,
+                    outputCatalogEntry,
+                    inputToHttpOutputOp,
+                    "create"
+            ).addToBatch(batchBuilder);
+            // each write will need a different lineage as operation logic may be different
+            logger.warn("writesCatalogEntries: " + writesCatalogEntries);
+            String inputToJdbcWriteOp = "APPEND";
+            writesCatalogEntries.forEach(jdbcWriteOutput -> {
+                new SimpleDamLineageBuilder(
+                        process,
+                        processRun,
+                        Collections.singletonList(outputCatalogEntry),
+                        jdbcWriteOutput,
+                        inputToJdbcWriteOp,
+                        jdbcWriteOutput.lineageTitlePrefix
+                ).addToBatch(batchBuilder);
+            });
+            if (damEnv.isOffline())
+                reportBatchToDam(batchBuilder);
+            else {
+                damHttpReportingExecutor.submit(() -> reportBatchToDam(batchBuilder));
+            }
+        }
     }
 
     protected Set<FieldDef> getHttpResponseSchema(SpanData span) {
@@ -253,7 +269,6 @@ public class DamTracerReporter implements Reporter {
 
     protected void reportBatchToDam(DamBatchBuilder batchBuilder){
         try {
-
             ApiClient apiClient;
             if (damEnv.isOffline()) {
                 apiClient = new OfflineFileApiClient();
