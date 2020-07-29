@@ -18,6 +18,7 @@ import static io.opentracing.contrib.specialagent.rule.akka.http.AkkaAgentInterc
 
 import akka.http.scaladsl.model.HttpRequest;
 import akka.http.scaladsl.model.HttpResponse;
+import akka.http.scaladsl.model.IllegalUriException;
 import akka.http.scaladsl.model.Uri;
 import akka.http.scaladsl.model.headers.Host;
 import io.opentracing.References;
@@ -74,19 +75,23 @@ public class AkkaHttpSyncHandler implements scala.Function1<HttpRequest,HttpResp
   }
 
   protected static Uri getNormalizedUri(HttpRequest request) {
-    // for example nginx sets
-    // proxy_set_header   X-Forwarded-Proto https;
-    // proxy_set_header   X-Forwarded-Scheme https;
-    Option<String> forwardedScheme = request.headers()
-            .find(h -> h.lowercaseName().equals("x-forwarded-scheme") || h.lowercaseName().equals("x-forwarded-proto"))
-            .map(h -> h.value());
-    Boolean securedConnection = request.getUri().getScheme().equals("https") || forwardedScheme.getOrElse(() -> false);
-    //Uri normalizedUri = request.getUri().scheme("aa")
-    // this handles the host header
-    Uri normalizedUri = request
-            .effectiveUri(securedConnection, Host.empty());
-    if (forwardedScheme.nonEmpty()){
-      normalizedUri = normalizedUri.withScheme(forwardedScheme.get());
+    Uri normalizedUri = request.uri();
+    try {
+      // for example nginx sets
+      // proxy_set_header   X-Forwarded-Proto https;
+      // proxy_set_header   X-Forwarded-Scheme https;
+      Option<String> forwardedScheme = request.headers()
+              .find(h -> h.lowercaseName().equals("x-forwarded-scheme") || h.lowercaseName().equals("x-forwarded-proto"))
+              .map(h -> h.value());
+      Boolean securedConnection = request.getUri().getScheme().equals("https") || forwardedScheme.filter(h -> h.equals("https")).nonEmpty();
+      // this handles the host header
+      normalizedUri = request.effectiveUri(securedConnection, Host.empty());
+      // this sets the forwarded scheme if needed
+      if (forwardedScheme.nonEmpty()){
+        normalizedUri = normalizedUri.withScheme(forwardedScheme.get());
+      }
+    } catch (RuntimeException e){
+      System.err.println("warning - unable to get normalized uri" + e.getMessage());
     }
     return normalizedUri;
   }
